@@ -1,0 +1,6 @@
+[submodule "LTC-GIF"]
+	path = LTC-GIF
+	url = git@github.com:jc15100/LTC-GIF.git
+[submodule "vid2tc"]
+	path = vid2tc
+	url = git@github.com:jc15100/vid2tc.git
