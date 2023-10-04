@@ -1,9 +1,0 @@
-[submodule "LTC-GIF"]
-	path = LTC-GIF
-	url = git@github.com:jc15100/LTC-GIF.git
-[submodule "vid2tc"]
-	path = vid2tc
-	url = git@github.com:jc15100/vid2tc.git
-[submodule "PGL-SUM"]
-	path = PGL-SUM
-	url = git@github.com:jc15100/PGL-SUM.git
