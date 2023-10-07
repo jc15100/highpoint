@@ -6,7 +6,7 @@ from os.path import isfile, join
 import cv2
 import argparse
 
-from highlights.summary import Summary
+from highlights.summary import SummaryHighlights
 from core.yolo import YOLOStep
 from core.tracker import Tracker
 from core.video import Video
@@ -21,10 +21,10 @@ def pipeline(video_path, output_path, output_filename):
     frames_files = video.video_to_frames(output_path, already_done=False)
 
     # (2) Initialize Summary step
-    summary = Summary(video_path=video_path)
+    summary = SummaryHighlights(video_path=video_path)
 
-    # (3) Run summary (optional)
-    frames_selected = summary.summarize(frames_files, boundary=0.5, skip=True)
+    # (3) Detect highlights (optional)
+    frames_selected = summary.highlights(frames_files, boundary=0.5, skip=True)
 
     # (4) Setup YOLO
     yolo = YOLOStep(video_path=video_path)

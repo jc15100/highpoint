@@ -11,8 +11,9 @@ from os.path import isfile, join
 from layers.summarizer import PGL_SUM
 from core.video import Video
 from core.frame import Frames
+from highlights import Highlights
 
-class Summary:
+class SummaryHighlights(Highlights):
     def __init__(self, video_path):
         self.video_path = video_path
         self.frames = Frames(video_path)
@@ -26,7 +27,7 @@ class Summary:
     '''
     Returns an array of 1 or 0s indicating whether the corresponding frame is to be included or not in summary.
     '''
-    def summarize(self, frames, boundary=0.5, skip=False):
+    def highlights(self, frames, boundary=0.5, skip=False):
         if skip == True:
             # Skip processing and just pick all frames
             all_frames = [1 for n in range(len(frames))]
