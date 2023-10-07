@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-from video import Video
 from os import listdir
 import os
 from os.path import isfile, join
 import cv2
-from summary import Summary
-from yolo import YOLOStep
-from tracker import Tracker
 import argparse
+
+from highlights.summary import Summary
+from core.yolo import YOLOStep
+from core.tracker import Tracker
+from core.video import Video
 
 def pipeline(video_path, output_path, output_filename):
     print("Pipeline started ⚙️")

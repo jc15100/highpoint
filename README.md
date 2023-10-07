@@ -3,12 +3,10 @@
 Run `pip3 install -r requirements.txt`
 
 ## Running the code
-
-Place the input video (`.mp4` format) in `pipeline/input/` folder.
-Then, from the top of the repo run:
+Pass a path to an input video & specify a path for output video.
 
 ```
-python pipeline/run.py --input-video "pipeline/input/intermediate.mp4" --output-path "pipeline/output" --output-name "video_summary.mp4"
+python pipeline/run.py --input-video "~/input/intermediate.mp4" --output-path "~/output" --output-name "video_summary.mp4"
 ```
 
 ## Papers Tried So Far

@@ -3,13 +3,14 @@ import os
 import torch
 import numpy as np
 #from inference.generate_summary import generate_summary
-from layers.summarizer import PGL_SUM
-from video import Video
-from frame import Frames
 from os import listdir
 import glob
 import os
 from os.path import isfile, join
+
+from layers.summarizer import PGL_SUM
+from core.video import Video
+from core.frame import Frames
 
 class Summary:
     def __init__(self, video_path):
