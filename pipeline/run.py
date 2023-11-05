@@ -6,10 +6,11 @@ from os.path import isfile, join
 import cv2
 import argparse
 
-from highlights.summary import SummaryHighlights
+from highlights.summary import Summary
 from core.yolo import YOLOStep
 from core.tracker import Tracker
 from core.video import Video
+from highpoint.segmenter import Segmenter
 
 def pipeline(video_path, output_path, output_filename):
     print("Pipeline started ⚙️")
@@ -18,11 +19,16 @@ def pipeline(video_path, output_path, output_filename):
     video = Video(video_path)
 
     # (1.1) Generate all video frames, if not already done.
-    frames_files = video.video_to_frames(output_path, already_done=False)
+    frames, frames_files = video.video_to_frames(output_path, already_done=False)
 
     # (2) Initialize Summary step
-    summary = SummaryHighlights(video_path=video_path)
+    summary = Summary(video_path=video_path)
 
+    # Test segmenter
+    segmenter = Segmenter()
+    segmenter.segment(frames)
+
+    return 
     # (3) Detect highlights (optional)
     frames_selected = summary.highlights(frames_files, boundary=0.5, skip=True)
 

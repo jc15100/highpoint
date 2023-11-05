@@ -11,9 +11,9 @@ from os.path import isfile, join
 from layers.summarizer import PGL_SUM
 from core.video import Video
 from core.frame import Frames
-from highlights import Highlights
+from .highlights import Highlights
 
-class SummaryHighlights(Highlights):
+class Summary(Highlights):
     def __init__(self, video_path):
         self.video_path = video_path
         self.frames = Frames(video_path)
