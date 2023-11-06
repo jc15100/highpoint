@@ -32,7 +32,6 @@ class Video:
     def video_to_frames(self, output_path, already_done=False):
         frame_count = 0
         frame_paths = []
-        frames = []
         if already_done:
             print("Frames already available at " + output_path)
             frame_paths = [os.path.join(output_path, f) for f in os.listdir(output_path) if f.endswith('.png')]
@@ -49,14 +48,14 @@ class Video:
                 
                 frame_filename = os.path.join(output_path, f"frame_{frame_count:04d}.png")
                 cv2.imwrite(frame_filename, frame)
-                frames.append(frame)
                 frame_paths.append(frame_filename)
                 frame_count += 1
+                print("processed " + str(frame_filename))
 
         # Closing video
         self.cap.release()
         print(f"Successfully created {frame_count} frames.")
-        return (frames, frame_paths)
+        return frame_paths
 
     def frame_paths(self, output_path):
         frame_paths = [f for f in os.listdir(output_path) if f.endswith('.png')]

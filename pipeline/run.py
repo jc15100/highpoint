@@ -19,14 +19,14 @@ def pipeline(video_path, output_path, output_filename):
     video = Video(video_path)
 
     # (1.1) Generate all video frames, if not already done.
-    frames, frames_files = video.video_to_frames(output_path, already_done=False)
+    frames_files = video.video_to_frames(output_path, already_done=True)
 
     # (2) Initialize Summary step
     summary = Summary(video_path=video_path)
 
     # Test segmenter
     segmenter = Segmenter()
-    segmenter.segment(frames)
+    segmenter.segment(frames_files)
 
     return 
     # (3) Detect highlights (optional)
