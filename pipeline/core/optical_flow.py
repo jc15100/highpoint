@@ -18,6 +18,13 @@ class OpticalFlow:
         return (p1, st, err)
     
     def calculate_dense(self, old_frame, frame):
-        # define what each number below means
+        # Algorithm specific parameters see https://www.diva-portal.org/smash/get/diva2:273847/FULLTEXT01.pdf
+        # 0.5 is image scale for each pyramid, 0.5 is classic pyramid where each layer is twice smaller
+        # 3 is number of levels in pyramid 
+        # 15 is averaging window size; bigger more robust and can pick up fast motion
+        # 3 is number of iterations
+        # 5 is poly n, size of the pixel neighborhood; 5 is typical value
+        # 1.2 is poly sigma, standard deviation of Gaussian; 1.2 standard for n = 5
+        # 0 flags, all off.
         flow = cv.calcOpticalFlowFarneback(old_frame, frame, None, 0.5, 3, 15, 3, 5, 1.2, 0)
         return flow

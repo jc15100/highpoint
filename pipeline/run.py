@@ -10,7 +10,7 @@ from highlights.summary import Summary
 from core.yolo import YOLOStep
 from core.tracker import Tracker
 from core.video import Video
-from highpoint.segmenter import Segmenter
+from segmentation.segmenter import Segmenter
 
 def pipeline(video_path, output_path, output_filename):
     print("Pipeline started ⚙️")
