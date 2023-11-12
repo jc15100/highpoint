@@ -1,51 +1,143 @@
-from core.optical_flow import OpticalFlow
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+
+from core.optical_flow import OpticalFlow
+from core.csv import CSVHelper
+from core.video import Video
 
 '''
 Segments a sports match video into points
 '''
 class Segmenter:
-    def __init__(self) -> None:
+    def __init__(self, plotting) -> None:
         self.flow = OpticalFlow()
-        self.plotting = False
+        self.plotting = plotting
+        self.csv = CSVHelper()
+
+        # plotting variables
+        self.ax = []
+        self.hsv = []
     
-    def segment(self, frame_files):
-        print("Starting segmentation")
-        old_frame_file = frame_files[0]
-        old_frame = cv2.imread(old_frame_file)
-
-        if self.plotting == True:
-            hsv = np.zeros_like(old_frame)
-            hsv[..., 1] = 255
-
-        old_frame = cv2.cvtColor(old_frame, cv2.COLOR_BGR2GRAY)
+    '''
+    Segments a Video object (OpenCV VideoCapture) in memory.
+    Use this method if process memory is not a concern or video is less than 10GB.
+    '''
+    def segment_video(self, video: Video):
+        print("Starting segmentation with Video object")
+        old_frame = video.read_frame()
+        old_frame = self._prepare_frame(old_frame)
 
         flows_sums = []
-        for frame in frame_files[1:]:
-            current_frame = cv2.imread(frame)
-            current_frame = cv2.cvtColor(current_frame, cv2.COLOR_BGR2GRAY)
-            flow = self.flow.calculate_dense(old_frame, current_frame)
+        frame_segments = []
 
-            # sum all vectors contained in the array flow
-            flow_sum = np.sum(flow)
-            flows_sums.append(flow_sum)
+        self._debug_plot_init(old_frame)
+        
+        while True:
+            current_frame = video.read_frame()
 
-            old_frame = current_frame
-            if self.plotting == True:
-                # get vector magnitude and angle
-                mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
-                # represent angle via hue
-                hsv[..., 0] = ang*180/np.pi/2
-                # represent magnitude as value
-                hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+            if current_frame is not None:
+                current_frame = self._prepare_frame(current_frame)
 
-                bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-                cv2.imshow('frame2', bgr)
-                k = cv2.waitKey(30) & 0xff
-                if k == 27:
-                    break
+                # calculate flow & sum all vectors contained in the array
+                flow = self.flow.calculate_dense(old_frame, current_frame)
+                flow_sum = np.sum(flow)
+                flows_sums.append(flow_sum)
+
+                print("Flow sum " + str(flow_sum) + ", frame " + str(len(flows_sums)))
+                old_frame = current_frame
+
+                self._debug_plot(self.ax, current_frame, flows_sums, flow, self.hsv)
+            else:
+                break
+        
+        # convolve the 1D array of sums to smooth out
+        flows_sums = np.convolve(flows_sums, np.ones(10)/10, mode='valid')
+
+        # save to CSV for later
+        self.csv.saveArrayToCSV(flows_sums, "flows.csv")
         
         if self.plotting == True:
             plt.plot(flows_sums, color = 'blue')
+            plt.show()
+
+        return (frame_segments, flows_sums)
+
+    '''
+    Segment a video represented by a set of frame files in disk.
+    This memory takes longer due to the incurred IO of reading each file.
+    Use this method if process memory is a bottleneck, or video is too large that can't be loaded into memory (> 10GB)
+    '''
+    def segment_frames(self, frame_files):
+        print("Starting segmentation with frame files")
+        
+        old_frame_file = frame_files[0]
+        old_frame = cv2.imread(old_frame_file)
+        old_frame = self._prepare_frame(old_frame)
+
+        flows_sums = []
+        frame_segments = []
+
+        self._debug_plot_init(old_frame)
+
+        for frame in frame_files[1:]:
+            current_frame = cv2.imread(frame)
+            current_frame = self._prepare_frame(current_frame)
+
+            # calculate dense optical flow & sum all vectors contained in the array
+            flow = self.flow.calculate_dense(old_frame, current_frame)
+            flow_sum = np.sum(flow)
+
+            flows_sums.append(flow_sum)
+            frame_segments.append(frame)
+
+            print("Flow sum " + str(flow_sum) + ", frame " + str(len(flows_sums)))
+            old_frame = current_frame
+            self._debug_plot(self.ax, current_frame, flows_sums, flow, self.hsv)
+            
+        
+        # convolve the 1D array of sums to smooth out
+        flows_sums = np.convolve(flows_sums, np.ones(10)/10, mode='valid')
+
+        # save to CSV for later
+        self.csv.saveArrayToCSV(flows_sums, "flows.csv")
+
+        #if self.plotting == True:
+        plt.plot(flows_sums, color = 'blue')
+        plt.show()
+
+        return (frame_segments, flows_sums)
+    
+    # MARK: Private methods
+
+    def _debug_plot_init(self, frame):
+        if self.plotting == True:
+            plt.ion()
+            hsv = np.zeros_like(frame)
+            hsv[..., 1] = 255
+            self.hsv = hsv
+
+            _, ax = plt.subplots(2,1)
+            self.ax = ax
+
+    def _debug_plot(self, axes, current_frame, flows_sums, flow, hsv):
+        if self.plotting == True:
+            axes[0].imshow(current_frame)
+            axes[1].plot(flows_sums)
+            plt.draw()
+            plt.pause(0.001)
+
+            # get vector magnitude and angle
+            mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+            # represent angle via hue
+            hsv[..., 0] = ang*180/np.pi/2
+            # represent magnitude as value
+            hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+
+            bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+            cv2.imshow('frame', bgr)
+
+    def _prepare_frame(self, frame):
+        frame = cv2.resize(frame, (0, 0), fx = 0.1, fy = 0.1)
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        return frame

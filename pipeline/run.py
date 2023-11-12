@@ -5,6 +5,7 @@ import os
 from os.path import isfile, join
 import cv2
 import argparse
+import time
 
 from highlights.summary import Summary
 from core.yolo import YOLOStep
@@ -19,14 +20,16 @@ def pipeline(video_path, output_path, output_filename):
     video = Video(video_path)
 
     # (1.1) Generate all video frames, if not already done.
-    frames_files = video.video_to_frames(output_path, already_done=True)
+    #frames_files = video.video_to_frames(output_path, already_done=True)
 
     # (2) Initialize Summary step
     summary = Summary(video_path=video_path)
 
     # Test segmenter
-    segmenter = Segmenter()
-    segmenter.segment(frames_files)
+    start_time = time.time()
+    segmenter = Segmenter(plotting=False)
+    frame_segments, flow_sums = segmenter.segment_video(video)
+    print("Segmenter Execution Time: %s seconds " % (time.time() - start_time))
 
     return 
     # (3) Detect highlights (optional)
@@ -54,6 +57,7 @@ def pipeline(video_path, output_path, output_filename):
     # (5) Store final video
     video.frames_to_video(frames=decorated_frames, height=height, width=width, output_video_path=output_filename)
 
+    video.release()
     print("Pipeline done ✅")
 
 if __name__ == "__main__":

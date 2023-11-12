@@ -1,5 +1,7 @@
 import cv2
 import os
+import numpy as np
+import matplotlib.pyplot as plt
 
 class Video:
     def __init__(self, video_path):
@@ -35,6 +37,7 @@ class Video:
         if already_done:
             print("Frames already available at " + output_path)
             frame_paths = [os.path.join(output_path, f) for f in os.listdir(output_path) if f.endswith('.png')]
+            frame_paths.sort()
             return frame_paths
         else:
             print("Extracting frames from video 💪🏼")
@@ -56,6 +59,14 @@ class Video:
         self.cap.release()
         print(f"Successfully created {frame_count} frames.")
         return frame_paths
+    
+    def draw_graph(self, data):
+        fig, ax = plt.subplots()
+        plt.ion()
+        plt.show()
+        line, = ax.plot(np.arange(data), np.zeros((data,)), c='r', lw=3, alpha=0.8)
+        line.set_ydata(data)
+        fig.canvas.draw()
 
     def frame_paths(self, output_path):
         frame_paths = [f for f in os.listdir(output_path) if f.endswith('.png')]
