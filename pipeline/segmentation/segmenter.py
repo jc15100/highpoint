@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.signal import argrelmin
 
 from core.optical_flow import OpticalFlow
 from core.csv import CSVHelper
@@ -14,17 +15,55 @@ class Segmenter:
         self.flow = OpticalFlow()
         self.plotting = plotting
         self.csv = CSVHelper()
+        self.filename = "flows.csv"
 
         # plotting variables
         self.ax = []
         self.hsv = []
+
+        # segmentation parameters
+        self.order = 500
     
     '''
-    Segments a Video object (OpenCV VideoCapture) in memory.
+    Segments a Video object in memory. 
+    Computes optical flow for the video, then computes relative minima with an order = 500;
+    points are estipulated to be parts in between local minima.
+    '''
+    def segment(self, video: Video):
+        flows = self.csv.csvToArray(self.filename)
+        if flows is not None:
+            print("Optical flow already computed for video, segmenting")
+        else:
+            flows = self.video_flow(video)
+
+        minima = argrelmin(flows, order=self.order)[0]
+        #print("minima: " + str(minima))
+
+        max_frame_count = video.get_frame_count()
+        frames_segments = []
+        for idx, min in enumerate(minima):
+            start_frame = min
+            if idx+1 < len(minima):
+                end_frame = minima[idx+1]
+            else:
+                end_frame = max_frame_count
+            
+            frames_segments.append((start_frame, end_frame))
+
+        print("segments: " + str(frames_segments))
+        for ids, segment in enumerate(frames_segments):
+            segment_frames = video.extract_frames(segment[0], segment[1])
+            height = segment_frames[0].shape[0]
+            width = segment_frames[0].shape[1]
+
+            video.frames_to_video(segment_frames, height, width, "segment-" + str(ids) + ".mp4")
+
+    '''
+    Computes optical flow across each frame in a Video object (OpenCV VideoCapture) in memory.
     Use this method if process memory is not a concern or video is less than 10GB.
     '''
-    def segment_video(self, video: Video):
-        print("Starting segmentation with Video object")
+    def video_flow(self, video: Video):
+        print("Starting optical flow with Video object")
         old_frame = video.read_frame()
         old_frame = self._prepare_frame(old_frame)
 
@@ -64,12 +103,12 @@ class Segmenter:
         return (frame_segments, flows_sums)
 
     '''
-    Segment a video represented by a set of frame files in disk.
+    Computes optical flow across a set of frame files.
     This memory takes longer due to the incurred IO of reading each file.
     Use this method if process memory is a bottleneck, or video is too large that can't be loaded into memory (> 10GB)
     '''
-    def segment_frames(self, frame_files):
-        print("Starting segmentation with frame files")
+    def frames_flow(self, frame_files):
+        print("Starting optical flow with frame files")
         
         old_frame_file = frame_files[0]
         old_frame = cv2.imread(old_frame_file)
@@ -100,7 +139,7 @@ class Segmenter:
         flows_sums = np.convolve(flows_sums, np.ones(10)/10, mode='valid')
 
         # save to CSV for later
-        self.csv.saveArrayToCSV(flows_sums, "flows.csv")
+        self.csv.saveArrayToCSV(flows_sums, self.filename)
 
         #if self.plotting == True:
         plt.plot(flows_sums, color = 'blue')

@@ -28,6 +28,10 @@ def pipeline(video_path, output_path, output_filename):
     # Test segmenter
     start_time = time.time()
     segmenter = Segmenter(plotting=False)
+    
+    segmenter.segment(video)
+    return
+
     frame_segments, flow_sums = segmenter.segment_video(video)
     print("Segmenter Execution Time: %s seconds " % (time.time() - start_time))
 

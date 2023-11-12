@@ -8,3 +8,6 @@ class CSVHelper:
     def saveArrayToCSV(self, array, filename):
         np.savetxt(filename, array, delimiter=",")
     
+    def csvToArray(self, filename):
+        data = np.genfromtxt(filename, delimiter=',')
+        return data

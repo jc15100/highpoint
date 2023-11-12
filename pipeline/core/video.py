@@ -31,6 +31,20 @@ class Video:
         else:
             return None
     
+    def extract_frames(self, start, end):
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, start-1)
+
+        print("Extracting frames from " + str(start) + " to " + str(end))
+        count = end - start
+        subset = []
+        while count >= 0:
+            frame = self.read_frame()
+            frame = cv2.resize(frame, (0, 0), fx = 0.1, fy = 0.1)
+            count-=1
+            subset.append(frame)
+
+        return subset
+    
     def video_to_frames(self, output_path, already_done=False):
         frame_count = 0
         frame_paths = []
@@ -83,8 +97,9 @@ class Video:
     def frames_to_video(self, frames, height, width, output_video_path):
         # Set video settings
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        output_video = cv2.VideoWriter(output_video_path, fourcc, 30.0, (width, height))
+        output_video = cv2.VideoWriter(output_video_path, fourcc, 30.0, (width, height))    
 
+        print("Writing " + str(len(frames)) + " frames of " + str(width) + " by " + str(height) + " to the filesystem")
         for frame in frames:
             output_video.write(frame)
         
