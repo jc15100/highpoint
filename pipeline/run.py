@@ -20,34 +20,10 @@ def pipeline(video_path, output_path, output_filename):
     #frames_files = video.video_to_frames(output_path, already_done=True)
 
     summary = Summary(video_path=video_path)
+    #frames_selected = summary.highlights(frames_files, boundary=0.5, skip=True)
 
     segmenter = Segmenter(plotting=False)    
     segmenter.segment(video)
-
-    video.release()
-    return
-
-    #frames_selected = summary.highlights(frames_files, boundary=0.5, skip=True)
-
-
-    # (4.2) Get frame files & height, width
-    #frame_paths, height, width = video.frame_paths(output_path=output_path)
-
-    # (4.3) Adding frames to video & run YOLO on the frame
-    decorated_frames = []
-    for i in range(len(frame_paths)):
-        if frames_selected[i]:
-            frame_file = frames_files[i]
-            frame_image = cv2.imread(frame_file)
-
-            # get bounding boxes from YOLO
-            #results = yolo.track(frame_image)
-
-            #annotated_frame = video.decorate(results)
-            #decorated_frames.append(annotated_frame)
-    
-    # (5) Store final video
-    video.frames_to_video(frames=decorated_frames, height=height, width=width, output_video_path=output_filename)
 
     video.release()
     print("Pipeline done ✅")
