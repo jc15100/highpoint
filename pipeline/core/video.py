@@ -104,7 +104,7 @@ class Video:
             output_video.write(frame)
         
         output_video.release()
-        print("Successfully created video.")
+        print("Successfully saved video at " + str(output_video_path))
     
     def decorate(self, results):
         # plot the bounding boxes for the diferent classes onto the frame

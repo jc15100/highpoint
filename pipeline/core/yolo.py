@@ -5,7 +5,11 @@ import os
 from ultralytics import YOLO
 
 class YOLOStep:
-    def __init__(self, video_path):
+    # Constants used to extract key elements from YOLO results
+    ball_name = 'sports ball'
+    person_name = 'person'
+
+    def __init__(self):
         self.model = YOLO('yolov8n.pt')
 
     def predict(self, frame):
@@ -13,12 +17,12 @@ class YOLOStep:
         return results
     
     def track(self, frame):
-        results = self.model.track(frame, persist=True)
+        results = self.model.track(frame)
 
         boxes = results[0].boxes.xywh.cpu()
         track_ids = results[0].boxes.id.int().cpu().tolist()
 
-        print("boxes " + boxes)
-        print("track ids" + track_ids)
+        print("boxes " + str(boxes))
+        print("track ids " + str(track_ids))
 
         return results

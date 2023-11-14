@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
-from layers.attention import SelfAttention
+from model.attention import SelfAttention
 
 
 class MultiAttention(nn.Module):

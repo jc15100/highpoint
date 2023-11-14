@@ -8,7 +8,7 @@ import glob
 import os
 from os.path import isfile, join
 
-from layers.summarizer import PGL_SUM
+from model.summarizer import PGL_SUM
 from core.video import Video
 from core.frame import Frames
 from .highlights import Highlights

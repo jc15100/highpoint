@@ -1,11 +1,14 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import argrelmin
+from scipy.signal import argrelmin, argrelmax
+from PIL import Image
 
+from core.yolo import YOLOStep
 from core.optical_flow import OpticalFlow
 from core.csv import CSVHelper
 from core.video import Video
+
 
 '''
 Segments a sports match video into points
@@ -17,12 +20,14 @@ class Segmenter:
         self.csv = CSVHelper()
         self.filename = "flows.csv"
 
+        self.yolo = YOLOStep()
+
         # plotting variables
         self.ax = []
         self.hsv = []
 
         # segmentation parameters
-        self.order = 500
+        self.order = 400
     
     '''
     Segments a Video object in memory. 
@@ -34,10 +39,10 @@ class Segmenter:
         if flows is not None:
             print("Optical flow already computed for video, segmenting")
         else:
-            flows = self.video_flow(video)
+            flows = self.detection_flow(video, YOLOStep.person_name)
 
         minima = argrelmin(flows, order=self.order)[0]
-        #print("minima: " + str(minima))
+        print("minima: " + str(minima))
 
         max_frame_count = video.get_frame_count()
         frames_segments = []
@@ -57,6 +62,47 @@ class Segmenter:
             width = segment_frames[0].shape[1]
 
             video.frames_to_video(segment_frames, height, width, "segment-" + str(ids) + ".mp4")
+
+    '''
+    Computes speed for a detected object in a Video object (OpenCV VideoCapture) in memory.
+    Use this method if process memory is not a concern or video is less than 10GB.
+    '''
+    def detection_flow(self, video: Video, object_class_name):
+        ball_boxes = []
+        while True:
+            current_frame = video.read_frame()
+
+            if current_frame is not None:
+                current_frame = cv2.resize(current_frame, (0, 0), fx = 0.1, fy = 0.1)
+                # call YOLO and extract ball detection
+                results = self.yolo.predict(current_frame)
+                
+                # annotated_frame = results[0].plot()
+                # # Display the annotated frame
+                # cv2.imshow("YOLOv8 Inference", annotated_frame)
+
+                # # Break the loop if 'q' is pressed
+                # if cv2.waitKey(1) & 0xFF == ord("q"):
+                #     break
+                for result in results:
+                    for box in result.boxes:
+                        class_value = int(box.cls[0].numpy())
+                        if result.names is not None:
+                            class_name = result.names[class_value]
+                            
+                            # if we have a bounding box for a sports ball, print it
+                            if class_name == object_class_name:
+                                # extract top left corner (x, y)
+                                x = box.xyxy[0][0].numpy()
+                                y = box.xyxy[0][1].numpy()
+                                ball_boxes.append((x, y))
+            else:
+                break
+        print("Finished ball_flow with boxes " + str(len(ball_boxes)))
+        speeds = self._object_speed(ball_boxes, 1)
+        plt.plot(speeds)
+        plt.show()
+        return speeds
 
     '''
     Computes optical flow across each frame in a Video object (OpenCV VideoCapture) in memory.
@@ -148,6 +194,16 @@ class Segmenter:
         return (frame_segments, flows_sums)
     
     # MARK: Private methods
+
+    def _object_speed(self, positions, time_interval):
+        speeds = []
+        for i in range(1, len(positions)):
+            displacement = np.subtract(positions[i], positions[i-1])
+            distance = np.linalg.norm(displacement)
+            speed = distance / time_interval
+            speeds.append(speed)
+
+        return np.array(speeds)
 
     def _debug_plot_init(self, frame):
         if self.plotting == True:
