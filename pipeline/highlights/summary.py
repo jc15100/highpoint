@@ -23,6 +23,7 @@ class Summary(Highlights):
         # Create model with paper reported configuration
         self.trained_model = PGL_SUM(input_size=1024, output_size=1024, num_segments=4, heads=8,fusion="add", pos_enc="absolute")
         self.trained_model.load_state_dict(torch.load(join(self.model_path, self.model_file[-1]), map_location=torch.device('cpu')))
+        print("Initialized summary step with PGL_SUM model")
     
     '''
     Returns an array of 1 or 0s indicating whether the corresponding frame is to be included or not in summary.

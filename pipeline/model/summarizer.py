@@ -99,7 +99,6 @@ class PGL_SUM(nn.Module):
         self.norm_linear = nn.LayerNorm(normalized_shape=self.linear_1.out_features, eps=1e-6)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
-        print("Initialized PGL_SUM")
 
     def forward(self, frame_features):
         """ Produce frames importance scores from the frame features, using the PGL-SUM model.

@@ -18,11 +18,4 @@ class YOLOStep:
     
     def track(self, frame):
         results = self.model.track(frame)
-
-        boxes = results[0].boxes.xywh.cpu()
-        track_ids = results[0].boxes.id.int().cpu().tolist()
-
-        print("boxes " + str(boxes))
-        print("track ids " + str(track_ids))
-
         return results

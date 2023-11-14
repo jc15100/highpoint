@@ -9,7 +9,6 @@ from core.optical_flow import OpticalFlow
 from core.csv import CSVHelper
 from core.video import Video
 
-
 '''
 Segments a sports match video into points
 '''
@@ -19,7 +18,6 @@ class Segmenter:
         self.plotting = plotting
         self.csv = CSVHelper()
         self.filename = "flows.csv"
-
         self.yolo = YOLOStep()
 
         # plotting variables
@@ -28,6 +26,7 @@ class Segmenter:
 
         # segmentation parameters
         self.order = 400
+        self.convolve_window = 200
     
     '''
     Segments a Video object in memory. 
@@ -36,8 +35,12 @@ class Segmenter:
     '''
     def segment(self, video: Video):
         flows = self.csv.csvToArray(self.filename)
+
         if flows is not None:
             print("Optical flow already computed for video, segmenting")
+            if self.plotting == True:
+                plt.plot(flows)
+                plt.show()
         else:
             flows = self.detection_flow(video, YOLOStep.person_name)
 
@@ -68,40 +71,56 @@ class Segmenter:
     Use this method if process memory is not a concern or video is less than 10GB.
     '''
     def detection_flow(self, video: Video, object_class_name):
-        ball_boxes = []
+        boxes = []
+
         while True:
             current_frame = video.read_frame()
 
             if current_frame is not None:
                 current_frame = cv2.resize(current_frame, (0, 0), fx = 0.1, fy = 0.1)
-                # call YOLO and extract ball detection
-                results = self.yolo.predict(current_frame)
+                # call YOLO and extract detections
+                results = self.yolo.track(current_frame)
                 
-                # annotated_frame = results[0].plot()
-                # # Display the annotated frame
-                # cv2.imshow("YOLOv8 Inference", annotated_frame)
+                if self.plotting == True:
+                    annotated_frame = results[0].plot()
+                    # Display the annotated frame
+                    cv2.imshow("YOLOv8 Inference", annotated_frame)
 
-                # # Break the loop if 'q' is pressed
-                # if cv2.waitKey(1) & 0xFF == ord("q"):
-                #     break
+                    # Break the loop if 'q' is pressed
+                    if cv2.waitKey(1) & 0xFF == ord("q"):
+                        break
+
                 for result in results:
-                    for box in result.boxes:
-                        class_value = int(box.cls[0].numpy())
-                        if result.names is not None:
-                            class_name = result.names[class_value]
-                            
-                            # if we have a bounding box for a sports ball, print it
-                            if class_name == object_class_name:
-                                # extract top left corner (x, y)
-                                x = box.xyxy[0][0].numpy()
-                                y = box.xyxy[0][1].numpy()
-                                ball_boxes.append((x, y))
+                    # pick first box
+                    first_box = result.boxes[0]
+    
+                    class_value = int(first_box.cls[0].numpy())
+                    if result.names is not None:
+                        class_name = result.names[class_value]
+                        # if we have a bounding box for a sports ball, print it
+                        if class_name == object_class_name:
+                            # extract top left corner (x, y)
+                            x = first_box.xyxy[0][0].numpy()
+                            y = first_box.xyxy[0][1].numpy()
+                            boxes.append((x, y))
             else:
                 break
-        print("Finished ball_flow with boxes " + str(len(ball_boxes)))
-        speeds = self._object_speed(ball_boxes, 1)
-        plt.plot(speeds)
-        plt.show()
+        print("Finished detection_flow with %d boxe(s) out of %d frame(s)" % (len(boxes),video.get_frame_count()))
+        
+        # compute approx. speeds
+        frame_interval = 1/video.get_frame_rate()
+        speeds = self._object_speed(boxes, frame_interval)
+
+        # convolve the 1D array of speeds
+        speeds = np.convolve(speeds, np.ones(self.convolve_window)/self.convolve_window, mode='valid')
+
+        # save to CSV for later
+        self.csv.saveArrayToCSV(speeds, self.filename)
+
+        if self.plotting == True:
+            plt.plot(speeds)
+            plt.show()
+
         return speeds
 
     '''
@@ -179,17 +198,16 @@ class Segmenter:
             print("Flow sum " + str(flow_sum) + ", frame " + str(len(flows_sums)))
             old_frame = current_frame
             self._debug_plot(self.ax, current_frame, flows_sums, flow, self.hsv)
-            
-        
+
         # convolve the 1D array of sums to smooth out
         flows_sums = np.convolve(flows_sums, np.ones(10)/10, mode='valid')
 
         # save to CSV for later
         self.csv.saveArrayToCSV(flows_sums, self.filename)
 
-        #if self.plotting == True:
-        plt.plot(flows_sums, color = 'blue')
-        plt.show()
+        if self.plotting == True:
+            plt.plot(flows_sums, color = 'blue')
+            plt.show()
 
         return (frame_segments, flows_sums)
     
