@@ -5,14 +5,28 @@ from rest_framework.parsers import JSONParser
 from django.views.decorators.csrf import csrf_exempt
 # for sending response to the client
 from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render
 # API definition for task
 from .serializers import VideoSerializer
 # Task model
 from .models import Video
 from django.views.generic import TemplateView
+from .forms import UploadForm
 
-class HomeView (TemplateView):
-    template_name = "home.html"
+def index(request):
+    form = UploadForm()
+    return render(request, 'upload-page.html', {'form': form})
+
+def upload(request):
+    if request.FILES:
+        form = UploadForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            form.save()
+        else:
+            print("Form not valid, skipping save")
+    
+    return JsonResponse({'success': True})
 
 @csrf_exempt
 def video(request):

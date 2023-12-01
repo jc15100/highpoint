@@ -4,7 +4,7 @@ from video_processor.views import *
 from . import views
 
 urlpatterns = [
-    path('', HomeView.as_view(), name='homepage'),
+    path('', views.index, name='index'),
+    path('upload/', views.upload, name='upload'),
     path("get-video/", views.video),
-    path("get-video/<int:pk>/", views.video_detail)
 ]
