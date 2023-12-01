@@ -1,21 +1,24 @@
 from django.http import HttpResponse
-# parsing data from the client
 from rest_framework.parsers import JSONParser
-# To bypass having a CSRF token
 from django.views.decorators.csrf import csrf_exempt
-# for sending response to the client
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
-# API definition for task
 from .serializers import VideoSerializer
-# Task model
-from .models import Video
+
+from django.shortcuts import render, redirect
+from django.contrib.auth import login
+from django.contrib.auth.forms import UserCreationForm
+
+from .models import Video, Userprofile
 from django.views.generic import TemplateView
 from .forms import UploadForm
 
-def index(request):
+def uploader(request):
     form = UploadForm()
     return render(request, 'upload-page.html', {'form': form})
+
+def frontpage(request):
+    return render(request, 'frontpage.html')
 
 def upload(request):
     if request.FILES:
@@ -27,6 +30,20 @@ def upload(request):
             print("Form not valid, skipping save")
     
     return JsonResponse({'success': True})
+
+def signup(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            userprofile = Userprofile.objects.create(user=user)
+            return redirect('frontpage')
+    else:
+        form = UserCreationForm()
+    
+    return render(request, 'signup.html', {'form': form})
 
 @csrf_exempt
 def video(request):

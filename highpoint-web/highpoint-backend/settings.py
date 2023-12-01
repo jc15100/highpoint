@@ -27,19 +27,26 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+STRIPE_TEST_PUBLIC_KEY = 'pk_test_51H1EzYAXG1Cll3zzr1d6zcPexdHpcVeRtfO1HqHqEOiVBzbqW5YQVm32wFwmvv4eklY7jVqk3hPbRDxOjYopBA0K00ZzfGXgK'
+STRIPE_TEST_SECRET_KEY = 'sk_test_51H1EzYAXG1Cll3zzr7OuQE0sVPjoqCWNKz8Su6GF4zeyDXIWUEAaZtrmVB6DwCpezpnLlYLh7C8dixOwsuwS6P0500IRBkIuY'
+STRIPE_LIVE_MODE = False
+DJSTRIPE_WEBHOOK_SECRET = 'whsec_xxx'
+DJSTRIPE_FOREIGN_KEY_TO_FIELD = 'djstripe_id'
 
 # Application definition
 
 INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
-    "video_processor.apps.VideoProcessorConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    'djstripe',
+
+    'video_processor.apps.VideoProcessorConfig',
 ]
 
 MIDDLEWARE = [
