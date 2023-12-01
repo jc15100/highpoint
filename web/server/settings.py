@@ -61,7 +61,7 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-ROOT_URLCONF = "highpoint-backend.urls"
+ROOT_URLCONF = "server.urls"
 
 TEMPLATES = [
     {
@@ -79,7 +79,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "highpoint-backend.wsgi.application"
+WSGI_APPLICATION = "server.wsgi.application"
 
 
 # Database
