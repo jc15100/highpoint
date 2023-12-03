@@ -1,4 +1,6 @@
 import os
+import logging
+logging.basicConfig()
 
 from django.http import HttpResponse
 from rest_framework.parsers import JSONParser
@@ -32,16 +34,17 @@ def upload(request):
             video = form.save()
             
             video_path = str(settings.BASE_DIR) + str(video.location.url)
-            output_path = str(settings.MEDIA_ROOT)
+            output_path = str(settings.MEDIA_URL)
 
-            print("Video path " + str(video_path))
-            print("Results path " + str(output_path))
+            logging.info("Input path " + str(video_path))
+            logging.info("Results path " + str(output_path))
 
-            engine.process(video_path, output_path)
+            segments = engine.process(video_path, output_path)
+            #logging.info("Output file " +str(segments[0]))
+            return JsonResponse({'success': True, 'segments': segments})
         else:
             print("Form not valid, skipping save")
-    
-    return JsonResponse({'success': True})
+            return JsonResponse({'success': False, 'segments': []})
 
 def signup(request):
     if request.method == 'POST':
@@ -56,9 +59,6 @@ def signup(request):
         form = UserCreationForm()
     
     return render(request, 'signup.html', {'form': form})
-
-def results(request):
-    return render(reqeust, 'results.html')
 
 @csrf_exempt
 def video(request):

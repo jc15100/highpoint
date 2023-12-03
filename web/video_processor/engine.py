@@ -16,6 +16,7 @@ class Engine:
     
     def process(self, video_path, output_path):
         service = MLService()
-        service.run_processing(video_path, output_path)
+        segments = service.run_processing(video_path, output_path)
+        return segments
         
         

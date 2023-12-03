@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import cv2
+import logging
 
 from highlights.summary import Summary
 from core.video import Video
@@ -8,8 +9,8 @@ from segmentation.segmenter import Segmenter
 
 class MLService:
 
-    def run_processing(self, video_path, output_path):
-        print("Video processing started.")
+    def run_processing(self, video_path, output_path) -> []:
+        logging.info("Video processing started.")
         # (1) Initialize video
         video = Video(video_path)
 
@@ -20,8 +21,10 @@ class MLService:
         #frames_selected = summary.highlights(frames_files, boundary=0.5, skip=True)
 
         segmenter = Segmenter(plotting=False)    
-        segmenter.segment(video, output_path)
-
+        segments_paths = segmenter.segment(video, output_path)
+        
+        logging.debug("# of segments: " + str(len(segments_paths)))
         video.release()
+        logging.info("Video processing finished.")
 
-        print("Video processing finished.")
+        return segments_paths

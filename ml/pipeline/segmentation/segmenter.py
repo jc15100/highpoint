@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+import logging
 from scipy.signal import argrelmin, argrelmax
 from PIL import Image
 
@@ -60,12 +61,17 @@ class Segmenter:
             frames_segments.append((start_frame, end_frame))
 
         print("segments: " + str(frames_segments))
+        segment_paths = []
         for ids, segment in enumerate(frames_segments):
             segment_frames = video.extract_frames(segment[0], segment[1])
             height = segment_frames[0].shape[0]
             width = segment_frames[0].shape[1]
 
-            video.frames_to_video(segment_frames, height, width, output_path + os.sep + "segment-" + str(ids) + ".mp4")
+            segment_path = output_path + os.sep + "segment-" + str(ids) + ".mp4"
+            video.frames_to_video(segment_frames, height, width, segment_path)
+            segment_paths.append(segment_path)
+        
+        return segment_paths
 
     '''
     Computes speed for a detected object in a Video object (OpenCV VideoCapture) in memory.
