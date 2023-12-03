@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import os
 import matplotlib.pyplot as plt
 from scipy.signal import argrelmin, argrelmax
 from PIL import Image
@@ -33,7 +34,7 @@ class Segmenter:
     Computes optical flow for the video, then computes relative minima with an order = 500;
     points are estipulated to be parts in between local minima.
     '''
-    def segment(self, video: Video):
+    def segment(self, video: Video, output_path):
         flows = self.csv.csvToArray(self.filename)
 
         if flows is not None:
@@ -64,7 +65,7 @@ class Segmenter:
             height = segment_frames[0].shape[0]
             width = segment_frames[0].shape[1]
 
-            video.frames_to_video(segment_frames, height, width, "segment-" + str(ids) + ".mp4")
+            video.frames_to_video(segment_frames, height, width, output_path + os.sep + "segment-" + str(ids) + ".mp4")
 
     '''
     Computes speed for a detected object in a Video object (OpenCV VideoCapture) in memory.

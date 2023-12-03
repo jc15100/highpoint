@@ -12,7 +12,7 @@ def pipeline(video_path, output_path, output_filename):
     print("Pipeline started ⚙️")
 
     service = MLService()
-    service.run_processing(video_path)
+    service.run_processing(video_path, output_path)
     
     print("Pipeline done ✅")
 

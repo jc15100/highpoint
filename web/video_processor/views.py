@@ -1,3 +1,5 @@
+import os
+
 from django.http import HttpResponse
 from rest_framework.parsers import JSONParser
 from django.views.decorators.csrf import csrf_exempt
@@ -27,10 +29,15 @@ def upload(request):
         form = UploadForm(request.POST, request.FILES)
 
         if form.is_valid():
-            file = form.save()
-            file_path = str(settings.BASE_DIR) + str(file.location.url)
-            print("File path " + str(file_path))
-            engine.process(file_path)
+            video = form.save()
+            
+            video_path = str(settings.BASE_DIR) + str(video.location.url)
+            output_path = str(settings.MEDIA_ROOT)
+
+            print("Video path " + str(video_path))
+            print("Results path " + str(output_path))
+
+            engine.process(video_path, output_path)
         else:
             print("Form not valid, skipping save")
     

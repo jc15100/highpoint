@@ -8,7 +8,7 @@ from segmentation.segmenter import Segmenter
 
 class MLService:
 
-    def run_processing(self, video_path):
+    def run_processing(self, video_path, output_path):
         print("Video processing started.")
         # (1) Initialize video
         video = Video(video_path)
@@ -16,11 +16,11 @@ class MLService:
         # (1.1) Generate all video frames, if not already done.
         #frames_files = video.video_to_frames(output_path, already_done=True)
 
-        summary = Summary(video_path=video_path, model_path= "../trained_model/split0/")
+        #summary = Summary(video_path=video_path, model_path= "../trained_model/split0/")
         #frames_selected = summary.highlights(frames_files, boundary=0.5, skip=True)
 
         segmenter = Segmenter(plotting=False)    
-        segmenter.segment(video)
+        segmenter.segment(video, output_path)
 
         video.release()
 

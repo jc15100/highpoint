@@ -99,12 +99,14 @@ class Video:
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         output_video = cv2.VideoWriter(output_video_path, fourcc, 30.0, (width, height))    
 
-        print("Writing " + str(len(frames)) + " frames of " + str(width) + " by " + str(height) + " to the filesystem")
-        for frame in frames:
-            output_video.write(frame)
-        
+        if output_video.isOpened():
+            print("Writing " + str(len(frames)) + " frames of " + str(width) + " by " + str(height) + " to the filesystem")
+            for frame in frames:
+                output_video.write(frame)
+            print("Successfully saved video at " + str(output_video_path))
+        else:
+            print("Failed to save video")
         output_video.release()
-        print("Successfully saved video at " + str(output_video_path))
     
     def decorate(self, results):
         # plot the bounding boxes for the diferent classes onto the frame

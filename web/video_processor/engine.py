@@ -14,9 +14,8 @@ class Engine:
     def __init__(self):
         self.ready = True
     
-    def process(self, video_path):
-        self.videopath = video_path
+    def process(self, video_path, output_path):
         service = MLService()
-        service.run_processing(video_path)
+        service.run_processing(video_path, output_path)
         
         
