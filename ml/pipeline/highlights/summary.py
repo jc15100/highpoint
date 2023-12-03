@@ -14,10 +14,10 @@ from core.frame import Frames
 from .highlights import Highlights
 
 class Summary(Highlights):
-    def __init__(self, video_path):
+    def __init__(self, video_path, model_path):
         self.video_path = video_path
         self.frames = Frames(video_path)
-        self.model_path = "trained_model/split0/"
+        self.model_path = model_path
         self.model_file = [f for f in listdir(self.model_path) if isfile(join(self.model_path, f))]
     
         # Create model with paper reported configuration

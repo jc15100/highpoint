@@ -6,26 +6,14 @@ from os.path import isfile, join
 import cv2
 import argparse
 
-from highlights.summary import Summary
-from core.video import Video
-from segmentation.segmenter import Segmenter
+from service import MLService
 
 def pipeline(video_path, output_path, output_filename):
     print("Pipeline started ⚙️")
 
-    # (1) Initialize video
-    video = Video(video_path)
-
-    # (1.1) Generate all video frames, if not already done.
-    #frames_files = video.video_to_frames(output_path, already_done=True)
-
-    summary = Summary(video_path=video_path)
-    #frames_selected = summary.highlights(frames_files, boundary=0.5, skip=True)
-
-    segmenter = Segmenter(plotting=False)    
-    segmenter.segment(video)
-
-    video.release()
+    service = MLService()
+    service.run_processing(video_path)
+    
     print("Pipeline done ✅")
 
 if __name__ == "__main__":
