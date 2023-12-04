@@ -30,9 +30,9 @@
                 </div>
             </div>
             
-            <div>
+            <div v-for="video in videos">
                 <video
-                id="result-video"
+                id="result-{{video.name}}"
                 class="video-js"
                 controls
                 preload="auto"
@@ -47,8 +47,8 @@
                     >supports HTML5 video</a
                     >
                 </p>
-            </video>
-        </div>
+                </video>
+            </div>
     </section>
     
     <script src="https://unpkg.com/vue@3"></script>
