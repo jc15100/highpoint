@@ -1,6 +1,7 @@
 import os
 import logging
 logging.basicConfig()
+logger = logging.getLogger('django')
 
 from django.http import HttpResponse
 from rest_framework.parsers import JSONParser
@@ -36,14 +37,13 @@ def upload(request):
             video_path = str(settings.BASE_DIR) + str(video.location.url)
             output_path = str(settings.MEDIA_URL)
 
-            logging.info("Input path " + str(video_path))
-            logging.info("Results path " + str(output_path))
+            logger.info("Input path " + str(video_path))
+            logger.info("Results path " + str(output_path))
 
             segments = engine.process(video_path, output_path)
-            #logging.info("Output file " +str(segments[0]))
             return JsonResponse({'success': True, 'segments': segments})
         else:
-            print("Form not valid, skipping save")
+            logger.error("Form not valid, skipping save")
             return JsonResponse({'success': False, 'segments': []})
 
 def signup(request):

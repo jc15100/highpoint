@@ -23,10 +23,7 @@
                         <a href="{% url 'uploader' %}" class="navbar-item">Videos</a>
                     </div>
                 {% else %}
-                    <div><p>Not logged in</p></div>
-                    <!-- <div class="navbar-start">
-                        <a href="{% url 'frontpage' %}" class="navbar-item">Stats</a>
-                    </div> -->
+                    <div></div>
                 {% endif %}
                 <div class="navbar-end">
                     <div class="navbar-item">
@@ -49,9 +46,9 @@
         </section>
 
         <footer class="footer">
-            <div class="content has-text-centered">
+            {% comment %} <div class="content has-text-centered">
                 <p><strong>highpoint.ai</strong></p>
-            </div>
+            </div> {% endcomment %}
         </footer>
 
         {% block scripts %}
