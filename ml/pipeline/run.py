@@ -5,6 +5,7 @@ import os
 from os.path import isfile, join
 import cv2
 import argparse
+import time
 
 from service import MLService
 

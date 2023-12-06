@@ -4,13 +4,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class Video:
-    def __init__(self, video_path):
+    def __init__(self, video_path, debug=False):
         self.video_path = video_path
         self.cap = cv2.VideoCapture(video_path)
         # Check video
         if not self.cap.isOpened():
             print(f"Error to open the video in {video_path}")
             exit()
+        # Output video stats
+        self.fps = self.cap.get(cv2.CAP_PROP_FPS)
+        self.debug = debug
+        print("Loaded video with fps %s" % self.fps)
 
     def get_frame_count(self):
         return int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -30,6 +34,20 @@ class Video:
             return frame
         else:
             return None
+    
+    def read_frame_every(self, skip_count):
+        frame = self.read_frame()
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, skip_count)
+
+        if frame is not None:
+            frame = self._downsize_frame(frame)
+
+            if self.debug:
+                cv2.imshow(f'frame-{skip_count}', frame)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
+
+        return frame
     
     def extract_frames(self, start, end):
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, start-1)
@@ -124,6 +142,11 @@ class Video:
     
     def release(self):
         self.cap.release()
+    
+    def _downsize_frame(self, frame):
+        frame = cv2.resize(frame, (0, 0), fx = 0.1, fy = 0.1)
+        #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        return frame
 
 if __name__ == '__main__': 
     pass
