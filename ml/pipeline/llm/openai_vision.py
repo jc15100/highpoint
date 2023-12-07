@@ -4,25 +4,43 @@ from openai import OpenAI
 import base64
 import cv2
 import time
+from core.csv import CSVHelper
 
 # API key: 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
 
 class OpenAIVisionProcessor:
     def __init__(self) -> None:
         self.client = OpenAI(api_key=os.getenv("openaikey"))
+        self.smashes_file = "smashes_file"
+        self.csv = CSVHelper()
 
     def process_video(self, video):
-        skip_count = 0
-        frame = video.read_frame_every(skip_count)
+        smashes = self.csv.csvToArray(self.smashes_file)
 
-        while frame is not None:
-            start_time = time.time()
-            result = self.process_frame(frame)
-            print("process() took %s seconds" % (time.time() - start_time))
-            print("Processed %s frame with result %s \n" % skip_count % result)
-
-            skip_count+= int(video.fps)
+        if smashes is not None:
+            print("Smashes already computed, returning")
+            return smashes
+        else:
+            skip_count = 0
             frame = video.read_frame_every(skip_count)
+
+            start_frames_ids = []
+            while frame is not None:
+                start_time = time.time()
+                result = self.process_frame(frame)
+                print("process() took %s seconds" % (time.time() - start_time))
+                print("Processed %s frame with result %s \n" % (skip_count, result))
+                
+                if result.__contains__("Yes"):
+                    start_frames_ids.append(skip_count)
+
+                skip_count+= int(video.fps)
+                frame = video.read_frame_every(skip_count)
+
+            print(start_frames_ids)
+            self.csv.saveArrayToCSV(start_frames_ids, self.smashes_file)
+
+        return start_frames_ids
 
     def process_frame(self, frame) -> str:
         query = """Please answer with Yes or No. Only answer Yes if you are very confident. You will be shown an image of a game of padel, with 4 players playing doubles. 
