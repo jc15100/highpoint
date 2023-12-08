@@ -13,7 +13,7 @@ def pipeline(video_path, output_path, output_filename):
     print("Pipeline started ⚙️")
 
     service = RacquetSportsMLService()
-    service.run_processing(video_path, output_path)
+    results = service.run_processing(video_path, output_path)
     
     print("Pipeline done ✅")
 

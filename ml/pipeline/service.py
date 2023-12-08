@@ -16,13 +16,13 @@ from gpt.openai_vision import OpenAIVisionProcessor
 
 class RacquetSportsMLService:
 
-    def run_processing(self, video_path, output_path) -> []:
+    def run_processing(self, video_path, output_path) -> {}:
         logger.info("Video processing started.")
         video = Video(video_path)
 
         # (1) Use GPT model to extract smashes & any other critical metadata
-        #smashes = self.extract_smashes(video, OpenAIVisionProcessor())
-        #smashes_videos_paths = video.extract_subvideos(smashes, video.fps*2, "smash-", output_path)
+        smashes = self.extract_smashes(video, OpenAIVisionProcessor())
+        smashes_videos_paths = video.extract_subvideos(smashes, video.fps*2, "smash-", output_path)
 
         # (2) Segment the game into points, return longest point as highlight
         group_highlight = self.extract_group_highlight(video, MatchSegmenter(plotting=False))

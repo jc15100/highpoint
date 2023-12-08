@@ -40,8 +40,8 @@ def upload(request):
             logger.info("Input path " + str(video_path))
             logger.info("Results path " + str(output_path))
 
-            segments = engine.process(video_path, output_path)
-            return JsonResponse({'success': True, 'segments': segments})
+            results = engine.process(video_path, output_path)
+            return JsonResponse({'success': True, 'results': results})
         else:
             logger.error("Form not valid, skipping save")
             return JsonResponse({'success': False, 'segments': []})

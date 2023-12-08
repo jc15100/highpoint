@@ -86,9 +86,9 @@
                                 }
                             })
                             
-                            // set video path as result 
-                            this.result = data.segments[0]
-                            console.log("output segment path:" + data.segments[0])
+                            // set video path as result
+                            console.log(data.results)
+                            this.result = data.results.smashes[0]
                         }
                     })
                     .catch(error => {

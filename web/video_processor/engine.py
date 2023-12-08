@@ -3,7 +3,7 @@ import os
 
 sys.path.append('/Users/juancarlosgarcia/Projects/highpoint/ml/pipeline/')
 
-from service import MLService
+from service import RacquetSportsMLService
 
 from os import listdir
 import os
@@ -15,8 +15,8 @@ class Engine:
         self.ready = True
     
     def process(self, video_path, output_path):
-        service = MLService()
-        segments = service.run_processing(video_path, output_path)
-        return segments
+        service = RacquetSportsMLService()
+        results = service.run_processing(video_path, output_path)
+        return results
         
         
