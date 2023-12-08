@@ -6,115 +6,145 @@
 </head>
 
 <body>
-    <body>
-        <section class="section" id="app">
-            <div class="container">
-                <h1 class="title mb-6">Upload your video:</h1>
-                
-                <div class="file">
-                    <label class="file-label">
-                        <input type="file" ref="file" class="file-input" @change="selectFile" multiple>
-                        
-                        <span class="file-cta">
-                            <span class="file-label">Choose a file...</span>
-                        </span>
-                    </label>
-                </div>
-                
-                <button class="button is-primary mt-2" v-if="videos.length" @click="upload">Upload</button>
-                
-                <div class="notification mt-6" v-if="videos.length">
-                    <p v-for="video in videos">
-                        [[ video.name ]] [[ video.status ]]
-                    </p>
-                </div>
+    <section class="section" id="app">
+        <div class="container">
+            <h1 class="title mb-6">Upload your video:</h1>
+            
+            <div class="file">
+                <label class="file-label">
+                    <input type="file" ref="file" class="file-input" @change="selectFile" multiple>
+                    
+                    <span class="file-cta">
+                        <span class="file-label">Choose a file...</span>
+                    </span>
+                </label>
             </div>
             
-            <div v-for="video in videos">
-                <video
-                id="result-{{video.name}}"
-                class="video-js"
-                controls
-                preload="auto"
-                width="640"
-                height="264">
-                    <source :src="result" type="video/mp4" />
-                    <p class="vjs-no-js">
-                        To view this video please enable JavaScript, and consider upgrading to a
-                        web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-                    </p>
-                </video>
+            <button class="button is-primary mt-2" v-if="videos.length" @click="upload">Upload</button>
+            
+            <div class="notification mt-6" v-if="videos.length">
+                <progress class="progress is-primary" :value="progress" max="100"> [[ progress ]] </progress>
             </div>
-    </section>
-    
-    <script src="https://unpkg.com/vue@3"></script>
-    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-    <script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
-    
-    <script>
-        const { createApp } = Vue
+        </div>
         
-        createApp({
-            data() {
-                return {
-                    videos: [],
-                    result: '',
-                }
-            },
-            delimiters: ['[[', ']]'],
-            methods: {
-                selectFile() {
-                    Array.from(this.$refs.file.files).forEach(file => {
-                        this.upload(file)
-                        
-                        this.videos.push({
-                            'name': file.name,
-                            'status': 'is uploading'
-                        })
-                    })
-                },
-                upload(file) {
-                    this.progress = 0
+        <h2 class="title smash">Smashes:</h2>
+        <div v-for="smash in smashes">
+            <video
+            id="result-{{smash.name}}"
+            class="video-js"
+            controls
+            preload="auto"
+            width="640"
+            height="264">
+            <source :src="smash" type="video/mp4" />
+            <p class="vjs-no-js">
+                To view this video please enable JavaScript, and consider upgrading to a
+                web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+            </p>
+        </video>
+    </div>
+    
+    
+    <h2 class="title group-highlight">Highlight:</h2>
+    <div v-for="highlight in highlights">
+        <video
+        id="result-{{highlight.name}}"
+        class="video-js"
+        controls
+        preload="auto"
+        width="640"
+        height="264">
+        <source :src="highlight" type="video/mp4" />
+        <p class="vjs-no-js">
+            To view this video please enable JavaScript, and consider upgrading to a
+            web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+        </p>
+    </video>
+</div>
+
+</section>
+
+<script src="https://unpkg.com/vue@3"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
+
+<style lang="css" scoped>
+    .progress {
+        width:220px;
+        margin:20px auto;
+    }
+</style>
+
+<script>
+    const { createApp } = Vue
+    
+    createApp({
+        data() {
+            return {
+                videos: [],
+                smashes: [],
+                highlights: [],
+                progress: 0
+            }
+        },
+        delimiters: ['[[', ']]'],
+        methods: {
+            selectFile() {
+                Array.from(this.$refs.file.files).forEach(file => {
+                    this.upload(file)
                     
-                    this.performUpload(file)
-                    .then(response => {
-                        const data = response.data
-                        if (data['success']) {
-                            this.videos.forEach(video => {
-                                if (video.name === file.name) {
-                                    video['status'] = 'is uploaded'
-                                }
-                            })
-                            
-                            // set video path as result
-                            console.log(data.results)
-                            this.result = data.results.smashes[0]
-                        }
+                    this.videos.push({
+                        'name': file.name,
+                        'status': 'is uploading'
                     })
-                    .catch(error => {
-                        console.log("Error " + error)
+                })
+            },
+            upload(file) {
+                this.performUpload(file, event => {
+                    this.progress = Math.round((100 * event.loaded)/event.total)
+                })
+                .then(response => {
+                    const data = response.data
+                    if (data['success']) {
                         this.videos.forEach(video => {
                             if (video.name === file.name) {
-                                video['status'] = 'failed'
+                                video['status'] = 'is uploaded'
                             }
                         })
-                    })
-                },
-                performUpload(file) {
-                    let formData = new FormData()
-                    formData.append('location', file)
-                    
-                    return axios
-                    .post('/upload/', formData, {
-                        headers: {
-                            "Content-Type": "multipart/form-data",
-                            "X-CSRFToken": "{{ csrf_token }}"
+                        
+                        console.log(data.results)
+                        
+                        // add group_highlights
+                        this.highlights.push(data.results.group_highlight)
+                        
+                        // add smashes
+                        this.smashes = this.smashes.concat(data.results.smashes)
+                    }
+                })
+                .catch(error => {
+                    console.log("Error " + error)
+                    this.progress = 0
+                    this.videos.forEach(video => {
+                        if (video.name === file.name) {
+                            video['status'] = 'failed'
                         }
                     })
-                }
+                })
+            },
+            performUpload(file, onUploadProgress) {
+                let formData = new FormData()
+                formData.append('location', file)
+                
+                return axios.post('/upload/', formData, {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    },
+                    onUploadProgress
+                })
             }
-        }).mount('#app')
-    </script>
-</body>
+        }
+    }).mount('#app')
+</script>
 </body>
 {% endblock %}
