@@ -11,15 +11,15 @@ from core.csv import CSVHelper
 class OpenAIVisionProcessor:
     def __init__(self) -> None:
         self.client = OpenAI(api_key=os.getenv("openaikey"))
-        self.smashes_file = "smashes_file"
+        self.keyframes_file = "keyframes_file"
         self.csv = CSVHelper()
 
     def process_video(self, video):
-        smashes = self.csv.csvToArray(self.smashes_file)
+        keyframes = self.csv.csvToArray(self.keyframes_file)
 
-        if smashes is not None:
-            print("Smashes already computed, returning")
-            return smashes
+        if keyframes is not None:
+            print("Key frames already computed, returning")
+            return keyframes
         else:
             skip_count = 0
             frame = video.read_frame_every(skip_count)
@@ -38,14 +38,13 @@ class OpenAIVisionProcessor:
                 frame = video.read_frame_every(skip_count)
 
             print(start_frames_ids)
-            self.csv.saveArrayToCSV(start_frames_ids, self.smashes_file)
+            self.csv.saveArrayToCSV(start_frames_ids, self.keyframes_file)
 
         return start_frames_ids
 
     def process_frame(self, frame) -> str:
         query = """Please answer with Yes or No. Only answer Yes if you are very confident. You will be shown an image of a game of padel, with 4 players playing doubles. 
-A smash is defined as a overhead hit of the ball with the racquet, usually very strongly.
-Is there any player near the net who is performing a smash, about to perform it or looks like they recently performed a smash?"""
+A smash in padel is an aggressive overhead shot to finish the point. Is there any player in the image who is performing a smash?"""
         
         return self.process_frame_with_query(frame, query)
     

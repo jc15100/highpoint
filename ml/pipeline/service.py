@@ -19,16 +19,9 @@ class MLService:
         video = Video(video_path)
 
         processor = OpenAIVisionProcessor()
-        smashes = processor.process_video(video)
+        keyframes = processor.process_video(video)
         
-        for frame_idx in smashes:
-            current_smash = video.extract_frames(int(frame_idx - video.fps/2), int(frame_idx + video.fps/2))
-
-            height = current_smash[0].shape[0]
-            width = current_smash[0].shape[1]
-
-            smash_path = output_path + os.sep + "smash-" + str(frame_idx) + ".mp4"
-            video.frames_to_video(current_smash, height, width, smash_path)
+        subvideos_paths = video.extract_subvideos(keyframes, video.fps*2, output_path)
 
         return
 
