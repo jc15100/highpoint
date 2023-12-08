@@ -1,10 +1,6 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<head>
-    <link href="https://vjs.zencdn.net/8.6.1/video-js.css" rel="stylesheet" />
-</head>
-
 <body>
     <section class="section" id="app">
         <div class="container">
@@ -27,7 +23,7 @@
             </div>
         </div>
         
-        <h2 class="title smash">Smashes:</h2>
+        <h3 class="title smash" v-if="videos.length">Smashes:</h3>
         <div v-for="smash in smashes">
             <video
             id="result-{{smash.name}}"
@@ -45,7 +41,7 @@
     </div>
     
     
-    <h2 class="title group-highlight">Highlight:</h2>
+    <h3 class="title group-highlight" v-if="videos.length">Highlight:</h3>
     <div v-for="highlight in highlights">
         <video
         id="result-{{highlight.name}}"
@@ -67,13 +63,6 @@
 <script src="https://unpkg.com/vue@3"></script>
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 <script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
-
-<style lang="css" scoped>
-    .progress {
-        width:220px;
-        margin:20px auto;
-    }
-</style>
 
 <script>
     const { createApp } = Vue
