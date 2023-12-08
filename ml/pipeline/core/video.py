@@ -63,20 +63,25 @@ class Video:
 
         return subset
     
-    def extract_subvideos(self, frame_idx_list, window_size, output_path):
+    def extract_subvideos(self, frame_idx_list, window_size, name, output_path):
         subvideos_paths = []
         for frame_idx in frame_idx_list:
-            current_poi = self.extract_frames(int(frame_idx - window_size), int(frame_idx + window_size))
-
-            height = current_poi[0].shape[0]
-            width = current_poi[0].shape[1]
-
-            smash_path = output_path + os.sep + "smash-" + str(frame_idx) + ".mp4"
-            self.frames_to_video(current_poi, height, width, smash_path)
-            subvideos_paths.append(smash_path)
+            subvideo_path = self.extract_subvideo(int(frame_idx - window_size), int(frame_idx + window_size), name, output_path)
+            subvideos_paths.append(subvideo_path)
         
         print("Extracted subvideos " + str(subvideos_paths))
         return subvideos_paths
+
+    def extract_subvideo(self, start_frame, end_frame, name, output_path):
+        current_poi = self.extract_frames(start_frame, end_frame)
+
+        height = current_poi[0].shape[0]
+        width = current_poi[0].shape[1]
+
+        subvideo_path = output_path + os.sep + name + str(start_frame) + ".mp4"
+        self.frames_to_video(current_poi, height, width, subvideo_path)
+
+        return subvideo_path
     
     def video_to_frames(self, output_path, already_done=False):
         frame_count = 0

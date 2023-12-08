@@ -13,8 +13,8 @@ class OpenAIVisionProcessor:
         self.client = OpenAI(api_key=os.getenv("openaikey"))
         self.keyframes_file = "keyframes_file"
         self.csv = CSVHelper()
-
-    def process_video(self, video):
+    
+    def process_video(self, video, query):
         keyframes = self.csv.csvToArray(self.keyframes_file)
 
         if keyframes is not None:
@@ -27,7 +27,7 @@ class OpenAIVisionProcessor:
             start_frames_ids = []
             while frame is not None:
                 start_time = time.time()
-                result = self.process_frame(frame)
+                result = self.process_frame_with_query(frame, query)
                 print("process() took %s seconds" % (time.time() - start_time))
                 print("Processed %s frame with result %s \n" % (skip_count, result))
                 
@@ -41,12 +41,6 @@ class OpenAIVisionProcessor:
             self.csv.saveArrayToCSV(start_frames_ids, self.keyframes_file)
 
         return start_frames_ids
-
-    def process_frame(self, frame) -> str:
-        query = """Please answer with Yes or No. Only answer Yes if you are very confident. You will be shown an image of a game of padel, with 4 players playing doubles. 
-A smash in padel is an aggressive overhead shot to finish the point. Is there any player in the image who is performing a smash?"""
-        
-        return self.process_frame_with_query(frame, query)
     
     def process_frame_with_query(self, frame, query) -> str:
         _, buffer = cv2.imencode(".jpg", frame)

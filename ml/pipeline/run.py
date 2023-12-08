@@ -7,12 +7,12 @@ import cv2
 import argparse
 import time
 
-from service import MLService
+from service import RacquetSportsMLService
 
 def pipeline(video_path, output_path, output_filename):
     print("Pipeline started ⚙️")
 
-    service = MLService()
+    service = RacquetSportsMLService()
     service.run_processing(video_path, output_path)
     
     print("Pipeline done ✅")

@@ -14,7 +14,7 @@ from core.video import Video
 '''
 Segments a sports match video into points
 '''
-class Segmenter:
+class MatchSegmenter:
     def __init__(self, plotting) -> None:
         self.flow = OpticalFlow()
         self.plotting = plotting
@@ -35,7 +35,7 @@ class Segmenter:
     Computes optical flow for the video, then computes relative minima with an order = 500;
     points are estipulated to be parts in between local minima.
     '''
-    def segment(self, video: Video, output_path):
+    def segment(self, video: Video):
         flows = self.csv.csvToArray(self.filename)
 
         if flows is not None:
@@ -49,8 +49,12 @@ class Segmenter:
         minima = argrelmin(flows, order=self.order)[0]
         print("minima: " + str(minima))
 
+        if not minima:
+            print("No minima, setting to first value.")
+            minima = [flows[0]]
+
         max_frame_count = video.get_frame_count()
-        frames_segments = []
+        keyframes_points = []
         for idx, min in enumerate(minima):
             start_frame = min
             if idx+1 < len(minima):
@@ -58,20 +62,9 @@ class Segmenter:
             else:
                 end_frame = max_frame_count
             
-            frames_segments.append((start_frame, end_frame))
+            keyframes_points.append((start_frame, end_frame))
 
-        print("segments: " + str(frames_segments))
-        segment_paths = []
-        for ids, segment in enumerate(frames_segments):
-            segment_frames = video.extract_frames(segment[0], segment[1])
-            height = segment_frames[0].shape[0]
-            width = segment_frames[0].shape[1]
-
-            segment_path = output_path + os.sep + "segment-" + str(ids) + ".mp4"
-            video.frames_to_video(segment_frames, height, width, segment_path)
-            segment_paths.append(segment_path)
-        
-        return segment_paths
+        return keyframes_points
 
     '''
     Computes speed for a detected object in a Video object (OpenCV VideoCapture) in memory.
@@ -104,12 +97,12 @@ class Segmenter:
                     class_value = int(first_box.cls[0].numpy())
                     if result.names is not None:
                         class_name = result.names[class_value]
-                        # if we have a bounding box for a sports ball, print it
                         if class_name == object_class_name:
                             # extract top left corner (x, y)
                             x = first_box.xyxy[0][0].numpy()
                             y = first_box.xyxy[0][1].numpy()
                             boxes.append((x, y))
+                            print("x %s and y %s" % (x, y))
             else:
                 break
         print("Finished detection_flow with %d boxe(s) out of %d frame(s)" % (len(boxes),video.get_frame_count()))
