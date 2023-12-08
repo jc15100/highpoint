@@ -47,9 +47,11 @@ A smash in padel is an aggressive overhead shot to finish the point. Is there an
 
         points = segmenter.segment(video)
 
+        print("Key segments " + str(points))
         # find longest point & return as group highlight
         longest_duration = 0
-        longest_point = None
+        longest_point = (0, video.fps)
+
         for point in points:
             current_duration = point[1] - point[0]
             if current_duration > longest_duration:

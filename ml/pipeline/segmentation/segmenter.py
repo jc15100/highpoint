@@ -46,25 +46,28 @@ class MatchSegmenter:
         else:
             flows = self.detection_flow(video, YOLOStep.person_name)
 
-        minima = argrelmin(flows, order=self.order)[0]
-        print("minima: " + str(minima))
+        if len(flows) > 0:
+            minima = argrelmin(flows, order=self.order)[0]
+            print("minima: " + str(minima))
 
-        if not minima:
-            print("No minima, setting to first value.")
-            minima = [flows[0]]
+            if not minima:
+                print("No minima, setting to first")
+                minima = [flows[0]]
 
-        max_frame_count = video.get_frame_count()
-        keyframes_points = []
-        for idx, min in enumerate(minima):
-            start_frame = min
-            if idx+1 < len(minima):
-                end_frame = minima[idx+1]
-            else:
-                end_frame = max_frame_count
-            
-            keyframes_points.append((start_frame, end_frame))
+            max_frame_count = video.get_frame_count()
+            keyframes_points = []
+            for idx, min in enumerate(minima):
+                start_frame = min
+                if idx+1 < len(minima):
+                    end_frame = minima[idx+1]
+                else:
+                    end_frame = max_frame_count
+                
+                keyframes_points.append((start_frame, end_frame))
 
-        return keyframes_points
+            return keyframes_points
+        else:
+            return []
 
     '''
     Computes speed for a detected object in a Video object (OpenCV VideoCapture) in memory.
@@ -107,21 +110,24 @@ class MatchSegmenter:
                 break
         print("Finished detection_flow with %d boxe(s) out of %d frame(s)" % (len(boxes),video.get_frame_count()))
         
-        # compute approx. speeds
-        frame_interval = 1/video.get_frame_rate()
-        speeds = self._object_speed(boxes, frame_interval)
+        if len(boxes) > 0:
+            # compute approx. speeds
+            frame_interval = 1/video.get_frame_rate()
+            speeds = self._object_speed(boxes, frame_interval)
 
-        # convolve the 1D array of speeds
-        speeds = np.convolve(speeds, np.ones(self.convolve_window)/self.convolve_window, mode='valid')
+            # convolve the 1D array of speeds
+            speeds = np.convolve(speeds, np.ones(self.convolve_window)/self.convolve_window, mode='valid')
 
-        # save to CSV for later
-        self.csv.saveArrayToCSV(speeds, self.filename)
+            # save to CSV for later
+            self.csv.saveArrayToCSV(speeds, self.filename)
 
-        if self.plotting == True:
-            plt.plot(speeds)
-            plt.show()
+            if self.plotting == True:
+                plt.plot(speeds)
+                plt.show()
 
-        return speeds
+            return speeds
+        else:
+            return []
 
     '''
     Computes optical flow across each frame in a Video object (OpenCV VideoCapture) in memory.

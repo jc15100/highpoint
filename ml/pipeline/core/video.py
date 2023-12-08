@@ -66,7 +66,9 @@ class Video:
     def extract_subvideos(self, frame_idx_list, window_size, name, output_path):
         subvideos_paths = []
         for frame_idx in frame_idx_list:
-            subvideo_path = self.extract_subvideo(int(frame_idx - window_size), int(frame_idx + window_size), name, output_path)
+            start_idx = int(frame_idx - window_size) if (frame_idx - window_size) > 0 else frame_idx
+            end_idx = max(int(frame_idx + window_size), self.get_frame_count())
+            subvideo_path = self.extract_subvideo(start_idx, end_idx, name, output_path)
             subvideos_paths.append(subvideo_path)
         
         print("Extracted subvideos " + str(subvideos_paths))
@@ -77,6 +79,8 @@ class Video:
 
         height = current_poi[0].shape[0]
         width = current_poi[0].shape[1]
+
+        print("Height %s and Width %s" %(height, width))
 
         subvideo_path = output_path + os.sep + name + str(start_frame) + ".mp4"
         self.frames_to_video(current_poi, height, width, subvideo_path)
