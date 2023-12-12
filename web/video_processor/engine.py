@@ -1,9 +1,7 @@
 import sys
 import os
 
-sys.path.append('/Users/juancarlosgarcia/Projects/highpoint/ml/pipeline/')
-
-from service import RacquetSportsMLService
+from ml.pipeline.service import RacquetSportsMLService
 
 from os import listdir
 import os

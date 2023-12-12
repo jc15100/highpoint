@@ -9,10 +9,9 @@ logging.basicConfig()
 logger = logging.getLogger('django')
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
-from highlights.summary import Summary
-from core.video import Video
-from segmentation.segmenter import MatchSegmenter
-from gpt.openai_vision import OpenAIVisionProcessor
+from .core.video import Video
+from .segmentation.segmenter import MatchSegmenter
+from .gpt.openai_vision import OpenAIVisionProcessor
 
 class RacquetSportsMLService:
 

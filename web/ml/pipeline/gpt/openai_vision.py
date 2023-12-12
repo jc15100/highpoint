@@ -4,7 +4,7 @@ from openai import OpenAI
 import base64
 import cv2
 import time
-from core.csv import CSVHelper
+from ..core.csv import CSVHelper
 
 # API key: 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
 

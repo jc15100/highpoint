@@ -6,10 +6,10 @@ import logging
 from scipy.signal import argrelmin, argrelmax
 from PIL import Image
 
-from core.yolo import YOLOStep
-from core.optical_flow import OpticalFlow
-from core.csv import CSVHelper
-from core.video import Video
+from ..core.yolo import YOLOStep
+from ..core.optical_flow import OpticalFlow
+from ..core.csv import CSVHelper
+from ..core.video import Video
 
 '''
 Segments a sports match video into points

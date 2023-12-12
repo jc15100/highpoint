@@ -1,3 +1,4 @@
+# server/web
 Django
 django-environ==0.10.0
 psycopg2-binary==2.9.9
@@ -5,3 +6,11 @@ google-cloud-secret-manager==2.16.1
 django-cors-headers
 dj-stripe
 djangorestframework
+
+# ml 
+torch
+numpy
+opencv-python
+tensorflow
+ultralytics
+lapx
