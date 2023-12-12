@@ -16,7 +16,8 @@ class Engine:
     
     def process(self, video_path, output_path):
         service = RacquetSportsMLService()
-        results = service.run_processing(video_path, output_path)
+        #results = service.run_processing(video_path, output_path)
+        results = {'smashes': ['/media/smash-0.mp4', '/media/smash-200.mp4'], 'group_highlight': "/media//highlight-0.mp4"}
         return results
         
         
