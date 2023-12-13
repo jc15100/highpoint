@@ -29,12 +29,10 @@ env_file = os.path.join(BASE_DIR, ".env")
 
 if os.path.isfile(env_file):
     # Use a local secret file, if provided
-
     env.read_env(env_file)
 # [START_EXCLUDE]
 elif os.getenv("TRAMPOLINE_CI", None):
     # Create local settings if running with CI, for unit testing
-
     placeholder = (
         f"SECRET_KEY=a\n"
         f"DATABASE_URL=sqlite://{os.path.join(BASE_DIR, 'db.sqlite3')}"

@@ -6,6 +6,7 @@ google-cloud-secret-manager==2.16.1
 django-cors-headers
 dj-stripe
 djangorestframework
+google-api-python-client
 
 #ml
 torch
@@ -16,3 +17,4 @@ scipy
 tensorflow
 ultralytics
 lapx
+openai
