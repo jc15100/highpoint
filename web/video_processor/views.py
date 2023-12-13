@@ -16,9 +16,11 @@ from django.conf import settings
 from .models import Video, Userprofile
 from .serializers import VideoSerializer
 from .forms import UploadForm, DownloadLinkForm
-from .engine import Engine
+from .services.engine import Engine
+from .services.youtube_helper import YoutubeHelper
 
 engine = Engine()
+youtube = YoutubeHelper()
 
 def uploader(request):
     uploadForm = UploadForm()
@@ -35,13 +37,13 @@ def download_link(request):
 
         if form.is_valid():
             video = form.save()
+            video_url = video.video_url
+            logger.info("Video URL to download " + str(video_url))
+
             output_path = str(settings.MEDIA_URL)
+            video_path = youtube.download_link(str(video_url))
 
-            logger.info("Video URL to download " + str(video.video_url))
-
-            # TODO: Download using Youtube API, then call process.
-
-            #results = engine.process(video_path, output_path)
+            results = engine.process(video_path, output_path)
             return JsonResponse({'success': True, 'results': []})
         else:
             logger.error("Form not valid, skipping save")
