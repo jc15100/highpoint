@@ -15,17 +15,37 @@ from django.conf import settings
 
 from .models import Video, Userprofile
 from .serializers import VideoSerializer
-from .forms import UploadForm
+from .forms import UploadForm, DownloadLinkForm
 from .engine import Engine
 
 engine = Engine()
 
 def uploader(request):
-    form = UploadForm()
-    return render(request, 'upload-page.html', {'form': form})
+    uploadForm = UploadForm()
+    downloadLinkForm = DownloadLinkForm()
+    return render(request, 'upload-page.html', {'form_upload': uploadForm, 'form_link': downloadLinkForm})
 
 def frontpage(request):
     return render(request, 'frontpage.html')
+
+def download_link(request):
+    print("Here in download link " + str(request))
+    if request.method == "POST":
+        form = DownloadLinkForm(request.POST)
+
+        if form.is_valid():
+            video = form.save()
+            output_path = str(settings.MEDIA_URL)
+
+            logger.info("Video URL to download " + str(video.video_url))
+
+            # TODO: Download using Youtube API, then call process.
+
+            #results = engine.process(video_path, output_path)
+            return JsonResponse({'success': True, 'results': []})
+        else:
+            logger.error("Form not valid, skipping save")
+            return JsonResponse({'success': False, 'results': []})
 
 def upload(request):
     if request.FILES:
@@ -44,7 +64,7 @@ def upload(request):
             return JsonResponse({'success': True, 'results': results})
         else:
             logger.error("Form not valid, skipping save")
-            return JsonResponse({'success': False, 'segments': []})
+            return JsonResponse({'success': False, 'results': []})
 
 def signup(request):
     if request.method == 'POST':
