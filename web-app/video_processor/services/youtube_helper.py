@@ -1,29 +1,8 @@
 import os
-
-import google_auth_oauthlib.flow
-import googleapiclient.discovery
-import googleapiclient.errors
-
-scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
+from pytube import YouTube
 
 class YoutubeHelper:
     
-    def download_link(self, url):
-        api_service_name = "youtube"
-        api_version = "v3"
-        client_secrets_file = "client_secret.json"
-
-        # Get credentials and create an API client
-        flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
-        client_secrets_file, scopes)
-    
-        credentials = flow.run_console("test")
-        youtube = googleapiclient.discovery.build(
-        api_service_name, api_version, credentials=credentials)
-
-        request = youtube.channels().list(
-            part="snippet,contentDetails,statistics",
-            id="UC_x5XG1OV2P6uZZ5FSM9Ttw"
-        )
-        response = request.execute()
-        return 'test/path'
+    def download_link(self, url, output_path):
+        yt = YouTube(url)
+        yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first().download(output_path=output_path)

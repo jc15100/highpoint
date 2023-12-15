@@ -40,11 +40,11 @@ def download_link(request):
             video_url = video.video_url
             logger.info("Video URL to download " + str(video_url))
 
-            output_path = str(settings.MEDIA_URL)
-            video_path = youtube.download_link(str(video_url))
+            output_path = str(settings.MEDIA_ROOT)
+            video_path = youtube.download_link(str(video_url), output_path)
 
             results = engine.process(video_path, output_path)
-            return JsonResponse({'success': True, 'results': []})
+            return JsonResponse({'success': True, 'results': results})
         else:
             logger.error("Form not valid, skipping save")
             return JsonResponse({'success': False, 'results': []})

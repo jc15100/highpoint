@@ -18,3 +18,4 @@ tensorflow
 ultralytics
 lapx
 openai
+pytube
