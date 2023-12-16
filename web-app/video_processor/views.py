@@ -3,10 +3,7 @@ import logging
 logging.basicConfig()
 logger = logging.getLogger('django')
 
-from django.http import HttpResponse
-from rest_framework.parsers import JSONParser
-from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.shortcuts import render
 from django.shortcuts import render, redirect
 from django.contrib.auth import login
@@ -14,11 +11,11 @@ from django.contrib.auth.forms import UserCreationForm
 from django.conf import settings
 
 from .models import Video, Userprofile
-from .serializers import VideoSerializer
 from .forms import UploadForm, DownloadLinkForm
 from .services.engine import Engine
 from .services.youtube_helper import YoutubeHelper
 
+# Global variables for services
 engine = Engine()
 youtube = YoutubeHelper()
 
@@ -40,7 +37,8 @@ def download_link(request):
 
             output_path = str(settings.MEDIA_ROOT)
             video_path = youtube.download_link(str(video_url), output_path)
-
+            
+            logger.info("Results path " + str(output_path))
             results = engine.process(video_path, output_path)
             return JsonResponse({'success': True, 'results': results})
         else:

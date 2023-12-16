@@ -160,13 +160,7 @@
             },
             processResults(response) {
                 const data = response.data
-                if (data['success']) {
-                    this.videos.forEach(video => {
-                        if (video.name === file.name) {
-                            video['status'] = 'is uploaded'
-                        }
-                    })
-                    
+                if (data['success']) {                    
                     console.log(data.results)
                     
                     // add group_highlights
@@ -174,6 +168,8 @@
                     
                     // add smashes
                     this.smashes = this.smashes.concat(data.results.smashes)
+                } else {
+                    console.log("Failed with response " + response)
                 }
             }
         }
