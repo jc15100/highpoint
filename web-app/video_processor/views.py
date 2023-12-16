@@ -31,10 +31,8 @@ def frontpage(request):
     return render(request, 'frontpage.html')
 
 def download_link(request):
-    print("Here in download link " + str(request))
     if request.method == "POST":
         form = DownloadLinkForm(request.POST)
-
         if form.is_valid():
             video = form.save()
             video_url = video.video_url
@@ -81,35 +79,3 @@ def signup(request):
         form = UserCreationForm()
     
     return render(request, 'signup.html', {'form': form})
-
-@csrf_exempt
-def video(request):
-    if (request.method == 'GET'):
-        videos = Video.objects.all()
-        serializer = VideoSerializer(videos, many=True)
-        return JsonResponse(serializer.data, safe=False)
-    elif (request.method == 'POST'):
-        data = JSONParser().parse(request)
-        serializer = VideoSerializer(data=data)
-
-        if (serializer.is_valid()):
-            serializer.save()
-            return JsonResponse(serializer.data, status=201)
-        return JsonResponse(serializer.errors, status=400)
-
-@csrf_exempt
-def video_detail(request, pk):
-    try:
-        video = Video.objects.get(pk=pk)
-    except:
-        return HttpResponse(status=404)
-    if (request.method == 'PUT'):
-        data = JSONParser().parse(request)
-        serializer = VideoSerializer(video, data=data)
-        if (serializer.is_valid()):
-            serializer.save()
-            return JsonResponse(serializer.data, status=201)
-        return JsonResponse(serializer.errors, 400)
-    elif (request.method == 'DELETE'):
-        video.delete()
-        return HttpResponse(stauts=204)
