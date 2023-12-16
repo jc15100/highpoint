@@ -14,6 +14,25 @@ class OpenAIVisionProcessor:
         self.keyframes_file = "keyframes_file"
         self.csv = CSVHelper()
     
+    def run_check(self, video, query, frames_to_check) -> bool:
+        check_done = False
+        check_count = 0
+        frame_id = 0
+
+        while not check_done:
+            frame = video.read_frame_every(video.fps)
+
+            result = self.process_frame_with_query(frame, query)
+            check_done = result.__contains__("Yes")
+            check_count +=1
+            print("Checking frame " + str(frame_id) + " for supported sport " + str(check_done))
+            frame_id += video.fps
+
+            if check_count >= frames_to_check:
+                break
+        
+        return check_done
+
     def process_video(self, video, query):
         keyframes = self.csv.csvToArray(self.keyframes_file)
 

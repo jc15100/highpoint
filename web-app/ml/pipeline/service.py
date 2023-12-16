@@ -14,13 +14,22 @@ from .segmentation.segmenter import MatchSegmenter
 from .gpt.openai_vision import OpenAIVisionProcessor
 
 class RacquetSportsMLService:
+    openAIProcessor = OpenAIVisionProcessor()
+
+    def check_supported_sport(self, video_path) -> bool:
+        video = Video(video_path)
+        query="""Please answer with Yes or No. Only answer Yes if you are very confident. Does the image contain people playing the sport of padel, pickleball or tennis?"""
+        check = self.openAIProcessor.run_check(video, query, frames_to_check=3)
+        video.release()
+
+        return check
 
     def run_processing(self, video_path, output_path) -> {}:
         logger.info("Video processing started.")
         video = Video(video_path)
 
         # (1) Use GPT model to extract smashes & any other critical metadata
-        smashes = self.extract_smashes(video, OpenAIVisionProcessor())
+        smashes = self.extract_smashes(video, self.openAIProcessor)
         smashes_videos_paths = video.extract_subvideos(smashes, video.fps*2, "smash-", output_path)
 
         # (2) Segment the game into points, return longest point as highlight
@@ -30,8 +39,11 @@ class RacquetSportsMLService:
         video.release()
         logger.info("Video processing finished.")
 
-        return {"smashes": smashes_videos_paths, 
-                "group_highlight": group_highlight_video_path}
+        return {
+            "smashes": smashes_videos_paths, 
+            "group_highlight": group_highlight_video_path,
+            "supported" : True
+            }
 
     def extract_smashes(self, video, gpt_vision: OpenAIVisionProcessor):
         logger.info("Trying to extract smashes.")

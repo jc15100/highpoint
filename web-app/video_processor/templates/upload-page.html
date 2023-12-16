@@ -34,25 +34,31 @@
                 <progress class="progress is-primary" :value="progress" max="100"> [[ progress ]] </progress>
             </div>
         </div>
-        
-        <h3 class="title smash" v-if="videos.length">Smashes:</h3>
-        <div v-for="smash in smashes">
-            <video
-            id="result-{{smash.name}}"
-            class="video-js"
-            controls
-            preload="auto"
-            width="640"
-            height="264">
-            <source :src="smash" type="video/mp4" />
-            <p class="vjs-no-js">
-                To view this video please enable JavaScript, and consider upgrading to a
-                web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-            </p>
-        </video>
     </div>
     
+    <div>
+        <p v-if="unsupported_input">Sorry, that sport is not supported!</p>
+    </div>
+
+    <div>
+    <h3 class="title smash" v-if="videos.length">Smashes:</h3>
+    <div v-for="smash in smashes">
+        <video
+        id="result-{{smash.name}}"
+        class="video-js"
+        controls
+        preload="auto"
+        width="640"
+        height="264">
+        <source :src="smash" type="video/mp4" />
+        <p class="vjs-no-js">
+            To view this video please enable JavaScript, and consider upgrading to a
+            web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+        </p>
+    </video>
+</div>
     
+<div>
     <h3 class="title group-highlight" v-if="videos.length">Highlight:</h3>
     <div v-for="highlight in highlights">
         <video
@@ -68,6 +74,7 @@
             web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
         </p>
     </video>
+    </div>
 </div>
 
 </section>
@@ -85,7 +92,8 @@
                 videos: [],
                 smashes: [],
                 highlights: [],
-                progress: 0
+                progress: 0,
+                unsupported_input: false
             }
         },
         delimiters: ['[[', ']]'],
@@ -163,11 +171,15 @@
                 if (data['success']) {                    
                     console.log(data.results)
                     
-                    // add group_highlights
-                    this.highlights.push(data.results.group_highlight)
-                    
-                    // add smashes
-                    this.smashes = this.smashes.concat(data.results.smashes)
+                    if (data.results.supported) {
+                        // add group_highlights
+                        this.highlights.push(data.results.group_highlight)
+                        
+                        // add smashes
+                        this.smashes = this.smashes.concat(data.results.smashes)
+                    } else {
+                        this.unsupported_input = !data.results.supported
+                    }
                 } else {
                     console.log("Failed with response " + response)
                 }

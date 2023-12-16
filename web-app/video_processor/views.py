@@ -33,8 +33,7 @@ def download_link(request):
         if form.is_valid():
             video = form.save()
             video_url = video.video_url
-            logger.info("Video URL to download " + str(video_url))
-
+            
             output_path = str(settings.MEDIA_ROOT)
             video_path = youtube.download_link(str(video_url), output_path)
             
