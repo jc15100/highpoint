@@ -2,7 +2,10 @@
 
 {% block content %}
 <body>
-    <section class="section" id="app">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js"></script>
+    <script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
+    
+    <section class="video-section" id="app">
         <div class="upload-container">
             <h1 class="title mb-6">Upload your video:</h1>
             
@@ -34,157 +37,172 @@
                 <progress class="progress is-primary" :value="progress" max="100"> [[ progress ]] </progress>
             </div>
         </div>
-    </div>
-    
-    <div class="unsupported-message">
-        <p v-if="unsupported_input">Sorry, that sport is not supported!</p>
-    </div>
-    
-    <div class="results-container">
-        <h3 class="title smash" v-if="videos.length">Smashes:</h3>
-        <div v-for="smash in smashes">
-            <video
-            id="result-{{smash.name}}"
-            class="video-js"
-            controls
-            preload="auto"
-            width="640"
-            height="264">
-            <source :src="smash" type="video/mp4" />
-            <p class="vjs-no-js">
-                To view this video please enable JavaScript, and consider upgrading to a
-                web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-            </p>
+        
+        <div class="unsupported-message">
+            <p v-if="unsupported_input">Sorry, that sport is not supported!</p>
+        </div>
+        
+        <div class="results-container">
+            <h3 class="title smash" v-if="videos.length">Smashes:</h3>
+            <div v-for="smash in smashes">
+                <video
+                id="result-{{smash.name}}"
+                class="video-js"
+                controls
+                preload="auto"
+                width="640"
+                height="264">
+                <source :src="smash" type="video/mp4" />
+                <p class="vjs-no-js">
+                    To view this video please enable JavaScript, and consider upgrading to a
+                    web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                </p>
             </video>
         </div>
-    </div>
-    
-    <div class="results-container">
-        <h3 class="title group-highlight" v-if="videos.length">Highlight:</h3>
-        <div v-for="highlight in highlights">
-            <video
-            id="result-{{highlight.name}}"
-            class="video-js"
-            controls
-            preload="auto"
-            width="640"
-            height="264">
-            <source :src="highlight" type="video/mp4" />
-            <p class="vjs-no-js">
-                To view this video please enable JavaScript, and consider upgrading to a
-                web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-            </p>
+        
+        <div class="results-container">
+            <h3 class="title group-highlight" v-if="videos.length">Highlight:</h3>
+            <div v-for="highlight in highlights">
+                <video
+                id="result-{{highlight.name}}"
+                class="video-js"
+                controls
+                preload="auto"
+                width="640"
+                height="264">
+                <source :src="highlight" type="video/mp4" />
+                <p class="vjs-no-js">
+                    To view this video please enable JavaScript, and consider upgrading to a
+                    web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                </p>
             </video>
         </div>
-    </div>
-</section>
-
-<script src="https://unpkg.com/vue@3"></script>
-<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-<script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
-
-<script>
-    const { createApp } = Vue
-    createApp({
-        data() {
-            return {
-                videos: [],
-                smashes: [],
-                highlights: [],
-                progress: 0,
-                unsupported_input: false
-            }
-        },
-        delimiters: ['[[', ']]'],
-        methods: {
-            selectFile() {
-                Array.from(this.$refs.file.files).forEach(file => {
-                    this.upload(file)
-                    
-                    this.videos.push({
-                        'name': file.name,
-                        'status': 'is uploading'
-                    })
-                })
+    </section>
+    
+    <canvas id="chartArea" width="100" height="100"></canvas>
+    
+    <script>
+        const { createApp } = Vue
+        
+        let chartContext = document.getElementById("chartArea").getContext("2d")
+        
+        createApp({
+            data() {
+                return {
+                    videos: [],
+                    smashes: [],
+                    highlights: [],
+                    progress: 0,
+                    unsupported_input: false,
+                }
             },
-            upload(file) {
-                this.performUpload(file, event => {
-                    this.progress = Math.round((100 * event.loaded)/event.total)
-                })
-                .then(response => {
-                    this.processResults(response)
-                })
-                .catch(error => {
-                    console.log("Error " + error)
-                    this.progress = 0
-                    this.videos.forEach(video => {
-                        if (video.name === file.name) {
-                            video['status'] = 'failed'
-                        }
-                    })
-                })
-            },
-            downloadLink() {
-                this.performDownload(this.$refs.videoUrl.value, event => {
-                    this.progress = Math.round((100 * event.loaded)/event.total)
-                })
-                .then(response => {
-                    this.processResults(response)
-                })
-                .catch(error => {
-                    console.log("Error " + error)
-                    this.progress = 0
-                    this.videos.forEach(video => {
-                        if (video.name === file.name) {
-                            video['status'] = 'failed'
-                        }
-                    })
-                })
-            },
-            performUpload(file, onUploadProgress) {
-                let formData = new FormData()
-                formData.append('location', file)
-                
-                return axios.post('/upload/', formData, {
-                    headers: {
-                        "Content-Type": "multipart/form-data",
-                        "X-CSRFToken": "{{ csrf_token }}"
-                    },
-                    onUploadProgress
-                })
-            },
-            performDownload(url, onUploadProgress) {
-                let formData = new FormData()
-                formData.append('video_url', url)
-                
-                return axios.post('/download_link/', formData, {
-                    headers: {
-                        "Content-Type": "multipart/form-data",
-                        "X-CSRFToken": "{{ csrf_token }}"
-                    },
-                    onUploadProgress
-                })
-            },
-            processResults(response) {
-                const data = response.data
-                if (data['success']) {                    
-                    console.log(data.results)
-                    
-                    if (data.results.supported) {
-                        // add group_highlights
-                        this.highlights.push(data.results.group_highlight)
+            delimiters: ['[[', ']]'],
+            methods: {
+                selectFile() {
+                    Array.from(this.$refs.file.files).forEach(file => {
+                        this.upload(file)
                         
-                        // add smashes
-                        this.smashes = this.smashes.concat(data.results.smashes)
+                        this.videos.push({
+                            'name': file.name,
+                            'status': 'is uploading'
+                        })
+                    })
+                },
+                upload(file) {
+                    this.performUpload(file, event => {
+                        this.progress = Math.round((100 * event.loaded)/event.total)
+                    })
+                    .then(response => {
+                        this.processResults(response)
+                    })
+                    .catch(error => {
+                        console.log("Error " + error)
+                        this.progress = 0
+                        this.videos.forEach(video => {
+                            if (video.name === file.name) {
+                                video['status'] = 'failed'
+                            }
+                        })
+                    })
+                },
+                downloadLink() {
+                    this.performDownload(this.$refs.videoUrl.value, event => {
+                        this.progress = Math.round((100 * event.loaded)/event.total)
+                    })
+                    .then(response => {
+                        this.processResults(response)
+                    })
+                    .catch(error => {
+                        console.log("Error " + error)
+                        this.progress = 0
+                        this.videos.forEach(video => {
+                            if (video.name === file.name) {
+                                video['status'] = 'failed'
+                            }
+                        })
+                    })
+                },
+                performUpload(file, onUploadProgress) {
+                    let formData = new FormData()
+                    formData.append('location', file)
+                    
+                    return axios.post('/upload/', formData, {
+                        headers: {
+                            "Content-Type": "multipart/form-data",
+                            "X-CSRFToken": "{{ csrf_token }}"
+                        },
+                        onUploadProgress
+                    })
+                },
+                performDownload(url, onUploadProgress) {
+                    let formData = new FormData()
+                    formData.append('video_url', url)
+                    
+                    return axios.post('/download_link/', formData, {
+                        headers: {
+                            "Content-Type": "multipart/form-data",
+                            "X-CSRFToken": "{{ csrf_token }}"
+                        },
+                        onUploadProgress
+                    })
+                },
+                processResults(response) {
+                    const data = response.data
+                    if (data['success']) {                    
+                        console.log(data.results)
+                        
+                        if (data.results.supported) {
+                            // add group_highlights
+                            this.highlights.push(data.results.group_highlight)
+                            
+                            // add smashes
+                            this.smashes = this.smashes.concat(data.results.smashes)
+                            
+                            // populate chart
+                            let chart = new Chart(chartContext, {
+                                type: "line",
+                                // TODO: Pass speeds
+                                data:[{x: 0, y: 5}, {x: 1, y: 15}],
+                                options: {
+                                    scales: {
+                                        x: {
+                                          type: 'linear',
+                                          position: 'bottom'
+                                        }
+                                    }
+                                }
+                            })
+                            
+                        } else {
+                            this.unsupported_input = !data.results.supported
+                        }
                     } else {
-                        this.unsupported_input = !data.results.supported
+                        console.log("Failed with response " + response)
                     }
-                } else {
-                    console.log("Failed with response " + response)
                 }
             }
-        }
-    }).mount('#app')
-</script>
+        })
+        .mount('#app')
+    </script>
 </body>
 {% endblock %}
