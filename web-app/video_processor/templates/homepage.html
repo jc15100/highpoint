@@ -1,14 +1,27 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<section class="box is-mobile has-text-centered" id="app">
-    <div class="block">
-        <div class="container">
-            <div v-for="result in content">
-                <p> hello result {{ result }}</p>
-            </div>
-        </div>
-    </div>
+
+<h3 class="subtitle is-6">Your stats</h3>
+<canvas class="box" id="chartArea" width="100" height="100"></canvas>
+
+<h3 class="subtitle is-6">Your videos</h3>
+<section class="box columns is-multiline has-text-centered is-mobile" id="app">
+    <div v-for="result in content" class="column">
+        <video
+        id="result-{{result.location}}"
+        class="video-js"
+        controls
+        preload="auto"
+        width="320"
+        height="132">
+        <source :src="result" type="video/mp4" />
+        <p class="vjs-no-js">
+            To view this video please enable JavaScript, and consider upgrading to a
+            web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+        </p>
+    </video>
+</div>
 </section>
 
 <script>
@@ -23,7 +36,11 @@
         methods: {
             fetchUserContent() {
                 return axios.get('/user_content/').then(response => {
-                    this.content = response.data.results
+                    this.content = response.data.content
+                    console.log(response)
+                    this.content.forEach((result) => {
+                        console.log(result.location)
+                    })
                 })
             }
         },

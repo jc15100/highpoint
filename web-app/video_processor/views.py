@@ -14,6 +14,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.conf import settings
 
 from .models import Video
+from .serializers import VideoSerializer
 from .forms import UploadForm, DownloadLinkForm
 from .services.engine import Engine
 from .services.youtube_helper import YoutubeHelper
@@ -39,12 +40,12 @@ def user_content(request):
             videos = Video.objects.filter(user=User.objects.get(username=request.user))
             print("Total videos uploaded " + str(len(videos)))
 
-            serialized_data = serialize("json", videos)
-            serialized_data = json.loads(serialized_data)
-            return JsonResponse({'success': True, 'results': serialized_data})
+            serializer = VideoSerializer(videos, many=True)
+            serialized_data = serializer.data
+            return JsonResponse({'success': True, 'content': serialized_data})
         else:
             print("User not logged in")
-            return JsonResponse({'success': True, 'results': []})
+            return JsonResponse({'success': True, 'content': []})
 
 def download_link(request):
     if request.method == "POST":

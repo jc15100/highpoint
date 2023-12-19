@@ -61,152 +61,153 @@
                     To view this video please enable JavaScript, and consider upgrading to a
                     web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
                 </p>
-            </video>
+                </video>
+            </div>
         </div>
-        
-        <div class="block">
-            <h3 class="title group-highlight" v-if="highlights.length">Highlight:</h3>
-            <div v-for="highlight in highlights">
-                <video
-                id="result-{{highlight.name}}"
-                class="video-js"
-                controls
-                preload="auto"
-                width="640"
-                height="264">
-                <source :src="highlight" type="video/mp4" />
-                <p class="vjs-no-js">
-                    To view this video please enable JavaScript, and consider upgrading to a
-                    web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-                </p>
-            </video>
-        </div>
-    </section>
     
-    <canvas id="chartArea" width="100" height="100"></canvas>
+    <div class="block">
+        <h3 class="title group-highlight" v-if="highlights.length">Highlight:</h3>
+        <div v-for="highlight in highlights">
+            <video
+            id="result-{{highlight.name}}"
+            class="video-js"
+            controls
+            preload="auto"
+            width="640"
+            height="264">
+            <source :src="highlight" type="video/mp4" />
+            <p class="vjs-no-js">
+                To view this video please enable JavaScript, and consider upgrading to a
+                web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+            </p>
+        </video>
+    </div>
+</section>
+
+<canvas class="box" id="chartArea" width="100" height="100" v-if="smashes.length"></canvas>
+
+<script>
+    const { createApp } = Vue
     
-    <script>
-        const { createApp } = Vue
-        
-        let chartContext = document.getElementById("chartArea").getContext("2d")
-        
-        createApp({
-            data() {
-                return {
-                    videos: [],
-                    smashes: [],
-                    highlights: [],
-                    progress: 0,
-                    unsupported_input: false,
-                }
+    let chartContext = document.getElementById("chartArea").getContext("2d")
+    
+    createApp({
+        data() {
+            return {
+                videos: [],
+                smashes: [],
+                highlights: [],
+                progress: 0,
+                unsupported_input: false,
+            }
+        },
+        delimiters: ['[[', ']]'],
+        methods: {
+            selectFile() {
+                Array.from(this.$refs.file.files).forEach(file => {
+                    this.upload(file)
+                    
+                    this.videos.push({
+                        'name': file.name,
+                        'status': 'is uploading'
+                    })
+                })
             },
-            delimiters: ['[[', ']]'],
-            methods: {
-                selectFile() {
-                    Array.from(this.$refs.file.files).forEach(file => {
-                        this.upload(file)
-                        
-                        this.videos.push({
-                            'name': file.name,
-                            'status': 'is uploading'
-                        })
+            upload(file) {
+                this.performUpload(file, event => {
+                    this.progress = Math.round((100 * event.loaded)/event.total)
+                })
+                .then(response => {
+                    this.processResults(response)
+                })
+                .catch(error => {
+                    console.log("Error " + error)
+                    this.progress = 0
+                    this.videos.forEach(video => {
+                        if (video.name === file.name) {
+                            video['status'] = 'failed'
+                        }
                     })
-                },
-                upload(file) {
-                    this.performUpload(file, event => {
-                        this.progress = Math.round((100 * event.loaded)/event.total)
+                })
+            },
+            downloadLink() {
+                this.performDownload(this.$refs.videoUrl.value, event => {
+                    this.progress = Math.round((100 * event.loaded)/event.total)
+                })
+                .then(response => {
+                    this.processResults(response)
+                })
+                .catch(error => {
+                    console.log("Error " + error)
+                    this.progress = 0
+                    this.videos.forEach(video => {
+                        if (video.name === file.name) {
+                            video['status'] = 'failed'
+                        }
                     })
-                    .then(response => {
-                        this.processResults(response)
-                    })
-                    .catch(error => {
-                        console.log("Error " + error)
-                        this.progress = 0
-                        this.videos.forEach(video => {
-                            if (video.name === file.name) {
-                                video['status'] = 'failed'
-                            }
-                        })
-                    })
-                },
-                downloadLink() {
-                    this.performDownload(this.$refs.videoUrl.value, event => {
-                        this.progress = Math.round((100 * event.loaded)/event.total)
-                    })
-                    .then(response => {
-                        this.processResults(response)
-                    })
-                    .catch(error => {
-                        console.log("Error " + error)
-                        this.progress = 0
-                        this.videos.forEach(video => {
-                            if (video.name === file.name) {
-                                video['status'] = 'failed'
-                            }
-                        })
-                    })
-                },
-                performUpload(file, onUploadProgress) {
-                    let formData = new FormData()
-                    formData.append('location', file)
+                })
+            },
+            performUpload(file, onUploadProgress) {
+                let formData = new FormData()
+                formData.append('location', file)
+                
+                return axios.post('/upload/', formData, {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    },
+                    onUploadProgress
+                })
+            },
+            performDownload(url, onUploadProgress) {
+                let formData = new FormData()
+                formData.append('video_url', url)
+                
+                return axios.post('/download_link/', formData, {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    },
+                    onUploadProgress
+                })
+            },
+            processResults(response) {
+                const data = response.data
+                if (data['success']) {                    
+                    console.log(data.results)
                     
-                    return axios.post('/upload/', formData, {
-                        headers: {
-                            "Content-Type": "multipart/form-data",
-                            "X-CSRFToken": "{{ csrf_token }}"
-                        },
-                        onUploadProgress
-                    })
-                },
-                performDownload(url, onUploadProgress) {
-                    let formData = new FormData()
-                    formData.append('video_url', url)
-                    
-                    return axios.post('/download_link/', formData, {
-                        headers: {
-                            "Content-Type": "multipart/form-data",
-                            "X-CSRFToken": "{{ csrf_token }}"
-                        },
-                        onUploadProgress
-                    })
-                },
-                processResults(response) {
-                    const data = response.data
-                    if (data['success']) {                    
-                        console.log(data.results)
+                    if (data.results.supported) {
+                        // add group_highlights
+                        this.highlights.push(data.results.group_highlight)
                         
-                        if (data.results.supported) {
-                            // add group_highlights
-                            this.highlights.push(data.results.group_highlight)
-                            
-                            // add smashes
-                            this.smashes = this.smashes.concat(data.results.smashes)
-                            
-                            // populate chart
-                            let chart = new Chart(chartContext, {
-                                type: "line",
-                                // TODO: Pass speeds
-                                data:[{x: 0, y: 5}, {x: 1, y: 15}],
-                                options: {
-                                    scales: {
-                                        x: {
-                                            type: 'linear',
-                                            position: 'bottom'
-                                        }
+                        // add smashes
+                        this.smashes = this.smashes.concat(data.results.smashes)
+                        
+                        // populate chart
+                        let chart = new Chart(chartContext, {
+                            type: "line",
+                            // TODO: Pass speeds
+                            data:[{x: 0, y: 5}, {x: 1, y: 15}],
+                            options: {
+                                scales: {
+                                    x: {
+                                        type: 'linear',
+                                        position: 'bottom'
                                     }
                                 }
-                            })
-                            
-                        } else {
-                            this.unsupported_input = !data.results.supported
-                        }
+                            }
+                        })
+                        
                     } else {
-                        console.log("Failed with response " + response)
+                        this.unsupported_input = !data.results.supported
                     }
+                } else {
+                    console.log("Failed with response " + response)
                 }
             }
-        })
-        .mount('#app')
-    </script>
+        }
+    })
+    .mount('#app')
+</script>
 </body>
 {% endblock %}

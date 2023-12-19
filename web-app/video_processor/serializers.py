@@ -5,4 +5,4 @@ from .models import Video
 class VideoSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Video
-        fields = [ 'location' ]
+        fields = [ 'location', 'video_url', ]
