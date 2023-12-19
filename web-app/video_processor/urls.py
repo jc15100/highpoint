@@ -7,8 +7,9 @@ from video_processor.views import *
 from . import views
 
 urlpatterns = [
-    path('', views.frontpage, name='frontpage'),
-    path('uploader', views.uploader, name='uploader'),
+    path('', views.homepage, name='homepage'),
+    path('user_content/', views.user_content, name='user_content'),
+    path('uploader', views.upload_page, name='upload_page'),
     path('upload/', views.upload, name='upload'),
     path('download_link/', views.download_link, name='download_link'),
     path('signup/', views.signup, name='signup'),

@@ -5,45 +5,49 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js"></script>
     <script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
     
-    <section class="video-section" id="app">
-        <div class="upload-container">
-            <h1 class="title mb-6">Upload your video:</h1>
-            
-            <div class="file">
-                <label class="file-label">
-                    <input type="file" ref="file" class="file-input" @change="selectFile" multiple>
-                    
-                    <span class="file-cta">
-                        <span class="file-label">Choose a file...</span>
+    <section class="box is-mobile has-text-centered" id="app">
+        <div class="block file is-link is-normal is-outlined is-centered">
+            <label class="file-label">
+                <input class="file-input" type="file" ref="file" @change="selectFile" multiple>
+                
+                <span class="file-cta">
+                    <span class="file-icon">
+                        <i class="fas fa-upload"></i>
                     </span>
-                </label>
-            </div>
-            
-            <button class="button is-primary mt-2" v-if="videos.length" @click="upload">Upload</button>
-            
-            <div class="notification mt-6" v-if="videos.length">
-                <progress class="progress is-primary" :value="progress" max="100"> [[ progress ]] </progress>
-            </div>
+                    <span class="file-label">
+                        Upload your video…
+                    </span>
+                </span>
+            </label>
         </div>
         
-        <div class="link-container">
-            <h1 class="title mb-6">Or link from Youtube:</h1>
-            
-            <div class="youtube-video">
-                <input ref="videoUrl" type="url" @keyup.enter="downloadLink">
-            </div>
-            
-            <div class="notification mt-6" v-if="videos.length">
-                <progress class="progress is-primary" :value="progress" max="100"> [[ progress ]] </progress>
-            </div>
+        <div class="block container is-centered level">
+            <p class="control has-icons-left has-icons-right level-item">
+                <input class="input is-link is-small" type="url" ref="videoUrl" placeholder="Or Youtube Link" @keyup.enter="downloadLink">
+                <span class="icon is-small is-left">
+                    <i class="gg-youtube"></i>
+                </span>
+                <span class="icon is-small is-right">
+                    <i class="fas fa-check"></i>
+                </span>
+            </p>
         </div>
         
-        <div class="unsupported-message">
-            <p v-if="unsupported_input">Sorry, that sport is not supported!</p>
-        </div>
+        <article class="message is-danger" v-if="unsupported_input">
+            <div class="message-header">
+                <p>Warning</p>
+                <button class="delete" aria-label="delete"></button>
+            </div>
+            <div class="message-body">Apologies, but the video you've provided features a sport that is not supported.</div>
+        </article>
         
-        <div class="results-container">
-            <h3 class="title smash" v-if="videos.length">Smashes:</h3>
+        
+        {% comment %} <div class="block is-centered is-small" v-if="videos.length">
+            <progress class="progress is-small mt-5" :value="progress" max="100"> [[ progress ]] </progress>
+        </div> {% endcomment %}
+        
+        <div class="block">
+            <h3 class="title smash" v-if="smashes.length">Smashes:</h3>
             <div v-for="smash in smashes">
                 <video
                 id="result-{{smash.name}}"
@@ -60,8 +64,8 @@
             </video>
         </div>
         
-        <div class="results-container">
-            <h3 class="title group-highlight" v-if="videos.length">Highlight:</h3>
+        <div class="block">
+            <h3 class="title group-highlight" v-if="highlights.length">Highlight:</h3>
             <div v-for="highlight in highlights">
                 <video
                 id="result-{{highlight.name}}"
@@ -186,8 +190,8 @@
                                 options: {
                                     scales: {
                                         x: {
-                                          type: 'linear',
-                                          position: 'bottom'
+                                            type: 'linear',
+                                            position: 'bottom'
                                         }
                                     }
                                 }

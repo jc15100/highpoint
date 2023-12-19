@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="box is-mobile has-text-centered" id="app">
+    <div class="block">
+        <div class="container">
+            <div v-for="result in content">
+                <p> hello result {{ result }}</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    const { createApp } = Vue
+    createApp({
+        data() {
+            return {
+                content: []
+            }
+        },
+        delimiters: ['[[', ']]'],
+        methods: {
+            fetchUserContent() {
+                return axios.get('/user_content/').then(response => {
+                    this.content = response.data.results
+                })
+            }
+        },
+        created() {
+            return this.fetchUserContent().then(() => {
+                console.log("Page initialized")
+            })
+        },
+    })
+    .mount('#app')
+</script>
+{% endblock %}

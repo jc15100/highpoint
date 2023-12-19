@@ -58,7 +58,7 @@ SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Change this to "False" when you are ready for production
-DEBUG = env("DEBUG")
+DEBUG = True#env("DEBUG")
 
 # [START gaestd_py_django_csrf]
 # SECURITY WARNING: It's recommended that you use this when

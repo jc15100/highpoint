@@ -5,6 +5,7 @@ from djstripe.models import Subscription
 class Video(models.Model):
     location = models.FileField(upload_to='uploads/%Y/%m/%d')
     video_url = models.URLField()
+    user = models.ForeignKey(User,verbose_name='User',on_delete=models.CASCADE)
 
 class Userprofile(models.Model):
     BASIC = 'basic'

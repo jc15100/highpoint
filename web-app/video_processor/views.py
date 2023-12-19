@@ -1,16 +1,19 @@
 import os
 import logging
+import json
+
 logging.basicConfig()
 logger = logging.getLogger('django')
 
 from django.http import JsonResponse
+from django.core.serializers import serialize
 from django.shortcuts import render
 from django.shortcuts import render, redirect
-from django.contrib.auth import login
+from django.contrib.auth import login, get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.conf import settings
 
-from .models import Video, Userprofile
+from .models import Video
 from .forms import UploadForm, DownloadLinkForm
 from .services.engine import Engine
 from .services.youtube_helper import YoutubeHelper
@@ -19,19 +22,38 @@ from .services.youtube_helper import YoutubeHelper
 engine = Engine()
 youtube = YoutubeHelper()
 
-def uploader(request):
-    uploadForm = UploadForm()
-    downloadLinkForm = DownloadLinkForm()
+def upload_page(request):
+    uploadForm = UploadForm(user_id=request.user.id)
+    
+    downloadLinkForm = DownloadLinkForm(user_id=request.user.id)
     return render(request, 'upload-page.html', {'form_upload': uploadForm, 'form_link': downloadLinkForm})
 
-def frontpage(request):
-    return render(request, 'frontpage.html')
+def homepage(request):
+    return render(request, 'homepage.html')
+
+def user_content(request):
+    if request.method == "GET":
+        if request.user.is_authenticated == True:
+            User = get_user_model()
+            print("Current user " + str(request.user))
+            videos = Video.objects.filter(user=User.objects.get(username=request.user))
+            print("Total videos uploaded " + str(len(videos)))
+
+            serialized_data = serialize("json", videos)
+            serialized_data = json.loads(serialized_data)
+            return JsonResponse({'success': True, 'results': serialized_data})
+        else:
+            print("User not logged in")
+            return JsonResponse({'success': True, 'results': []})
 
 def download_link(request):
     if request.method == "POST":
         form = DownloadLinkForm(request.POST)
         if form.is_valid():
+            # add user to form
+            form.instance.user = request.user
             video = form.save()
+
             video_url = video.video_url
             
             output_path = str(settings.MEDIA_ROOT)
@@ -49,6 +71,8 @@ def upload(request):
         form = UploadForm(request.POST, request.FILES)
 
         if form.is_valid():
+            # add user to form
+            form.instance.user = request.user
             video = form.save()
             
             video_path = str(settings.BASE_DIR) + str(video.location.url)
