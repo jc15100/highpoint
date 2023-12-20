@@ -13,7 +13,7 @@ from django.contrib.auth import login, get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.conf import settings
 
-from .models import Video
+from .models import Video, UserProfile
 from .serializers import VideoSerializer
 from .forms import UploadForm, DownloadLinkForm
 from .services.engine import Engine
@@ -38,7 +38,6 @@ def user_content(request):
             User = get_user_model()
             print("Current user " + str(request.user))
             videos = Video.objects.filter(user=User.objects.get(username=request.user))
-            print("Total videos uploaded " + str(len(videos)))
 
             serializer = VideoSerializer(videos, many=True)
             serialized_data = serializer.data
@@ -95,7 +94,8 @@ def signup(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            userprofile = Userprofile.objects.create(user=user)
+            userprofile = UserProfile.objects.create(user=user)
+            userprofile.save()
             return redirect('frontpage')
     else:
         form = UserCreationForm()

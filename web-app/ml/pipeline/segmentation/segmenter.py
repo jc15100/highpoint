@@ -36,15 +36,17 @@ class MatchSegmenter:
     points are estipulated to be parts in between local minima.
     '''
     def segment(self, video: Video):
-        flows = self.csv.csvToArray(self.filename)
+        flows = self.csv.loadDictionary(self.filename)
 
         if flows is not None:
             print("Optical flow already computed for video, segmenting")
             if self.plotting == True:
-                plt.plot(flows)
+                plt.plot(flows[1])
                 plt.show()
         else:
-            flows = self.detection_flow(video, YOLOStep.person_name)
+            flows_per_player = self.detection_flow(video, YOLOStep.person_name)
+            # use player with id=1 for segmentation
+            flows = flows_per_player[1]
 
         if len(flows) > 0:
             minima = argrelmin(flows, order=self.order)[0]
@@ -65,9 +67,10 @@ class MatchSegmenter:
                 
                 keyframes_points.append((start_frame, end_frame))
 
-            return keyframes_points
+            return {'keyframes': keyframes_points,
+                    'player_speeds': flows_per_player}
         else:
-            return []
+            return {}
 
     '''
     Computes speed for a detected object in a Video object (OpenCV VideoCapture) in memory.
@@ -75,6 +78,7 @@ class MatchSegmenter:
     '''
     def detection_flow(self, video: Video, object_class_name):
         boxes = []
+        boxes_per_player = {}
 
         while True:
             current_frame = video.read_frame()
@@ -94,38 +98,61 @@ class MatchSegmenter:
                         break
 
                 for result in results:
-                    # pick first box
-                    first_box = result.boxes[0]
-    
-                    class_value = int(first_box.cls[0].numpy())
-                    if result.names is not None:
-                        class_name = result.names[class_value]
-                        if class_name == object_class_name:
-                            # extract top left corner (x, y)
-                            x = first_box.xyxy[0][0].numpy()
-                            y = first_box.xyxy[0][1].numpy()
-                            boxes.append((x, y))
-                            print("x %s and y %s" % (x, y))
+                    # pick first box for speed calculations for segmentation
+                    # first_box = result.boxes[0]
+                    # class_value = int(first_box.cls[0].numpy())
+                    # if result.names is not None:
+                    #     class_name = result.names[class_value]
+                    #     if class_name == object_class_name:
+                    #         # extract top left corner (x, y)
+                    #         x = first_box.xyxy[0][0].numpy()
+                    #         y = first_box.xyxy[0][1].numpy()
+                    #         boxes.append((x, y))
+                    #         print("x %s and y %s" % (x, y))
+                    
+                    for box in result.boxes:
+                        if box.id is not None and result.names is not None:
+                            id = int(box.id[0].numpy())
+                            class_value = int(box.cls[0].numpy())
+                            class_name = result.names[class_value]
+
+                            if class_name == object_class_name:
+                                # extract top left corner (x, y)
+                                x = box.xyxy[0][0].numpy()
+                                y = box.xyxy[0][1].numpy()
+
+                                if id not in boxes_per_player:
+                                    boxes_per_player[id] = [(x ,y)]
+                                else:
+                                    boxes_per_player[id].append((x, y))
             else:
                 break
         print("Finished detection_flow with %d boxe(s) out of %d frame(s)" % (len(boxes),video.get_frame_count()))
         
-        if len(boxes) > 0:
+        if len(boxes_per_player) > 0:
             # compute approx. speeds
             frame_interval = 1/video.get_frame_rate()
-            speeds = self._object_speed(boxes, frame_interval)
+            
+            speeds_per_player = {}
+            for player, boxes in boxes_per_player.items():
+                speeds = self._object_speed(boxes, frame_interval)
 
-            # convolve the 1D array of speeds
-            speeds = np.convolve(speeds, np.ones(self.convolve_window)/self.convolve_window, mode='valid')
+                if len(speeds) > 0:
+                    # convolve the 1D array of speeds
+                    speeds = np.convolve(speeds, np.ones(self.convolve_window)/self.convolve_window, mode='valid')
+
+                    #store in map
+                    speeds_per_player[player] = speeds
 
             # save to CSV for later
-            self.csv.saveArrayToCSV(speeds, self.filename)
+            self.csv.saveDictionary(speeds_per_player, self.filename)
 
             if self.plotting == True:
-                plt.plot(speeds)
+                # plot one of the speeds
+                plt.plot(speeds_per_player[1])
                 plt.show()
 
-            return speeds
+            return speeds_per_player
         else:
             return []
 

@@ -7,7 +7,7 @@ class Video(models.Model):
     video_url = models.URLField()
     user = models.ForeignKey(User,verbose_name='User',on_delete=models.CASCADE)
 
-class Userprofile(models.Model):
+class UserProfile(models.Model):
     BASIC = 'basic'
     PRO = 'pro'
 

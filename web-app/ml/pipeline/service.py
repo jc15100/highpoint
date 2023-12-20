@@ -33,7 +33,7 @@ class RacquetSportsMLService:
         smashes_videos_paths = video.extract_subvideos(smashes, video.fps*2, "smash-", output_path)
 
         # (2) Segment the game into points, return longest point as highlight
-        group_highlight = self.extract_group_highlight(video, MatchSegmenter(plotting=False))
+        group_highlight, player_speeds = self.extract_group_highlight(video, MatchSegmenter(plotting=False))
         group_highlight_video_path = video.extract_subvideo(start_frame=group_highlight[0], end_frame=group_highlight[1], name="highlight-", output_path=output_path)
         
         video.release()
@@ -42,6 +42,7 @@ class RacquetSportsMLService:
         return {
             "smashes": smashes_videos_paths, 
             "group_highlight": group_highlight_video_path,
+            "player_speeds": player_speeds,
             "supported" : True
             }
 
@@ -56,7 +57,8 @@ A smash in padel is an aggressive overhead shot to finish the point. Is there an
     def extract_group_highlight(self, video, segmenter: MatchSegmenter):
         logger.info("Trying to extract group highlight.")
 
-        points = segmenter.segment(video)
+        results_dict = segmenter.segment(video)
+        points = results_dict['keyframes']
 
         print("Key segments " + str(points))
         # find longest point & return as group highlight
@@ -69,5 +71,5 @@ A smash in padel is an aggressive overhead shot to finish the point. Is there an
                 longest_duration = current_duration
                 longest_point = point
 
-        # return start of point
-        return longest_point
+        # return longest point & player_speeds
+        return (longest_point, results_dict['player_speeds'])
