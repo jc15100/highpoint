@@ -155,7 +155,7 @@
             },
             performUpload(file, onUploadProgress) {
                 let formData = new FormData()
-                formData.append('location', file)
+                formData.append('filesystem_url', file)
                 
                 return axios.post('/upload/', formData, {
                     headers: {
@@ -167,7 +167,7 @@
             },
             performDownload(url, onUploadProgress) {
                 let formData = new FormData()
-                formData.append('video_url', url)
+                formData.append('web_url', url)
                 
                 return axios.post('/download_link/', formData, {
                     headers: {

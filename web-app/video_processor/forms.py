@@ -4,7 +4,7 @@ from .models import Video
 class UploadForm(forms.ModelForm):
     class Meta:
         model = Video
-        fields = ('location', )
+        fields = ('filesystem_url', )
     user = forms.HiddenInput()
 
     def __init__(self, *args, **kwargs):
@@ -17,7 +17,7 @@ class UploadForm(forms.ModelForm):
 class DownloadLinkForm(forms.ModelForm):
     class Meta:
         model= Video
-        fields = ('video_url',)
+        fields = ('web_url',)
     user = forms.HiddenInput()
 
     def __init__(self, *args, **kwargs):
