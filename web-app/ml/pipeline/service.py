@@ -1,18 +1,16 @@
 import numpy as np
-import os
-import time
-import cv2
-import sys
-
-import logging
-logging.basicConfig()
-logger = logging.getLogger('django')
-logger.addHandler(logging.StreamHandler(sys.stdout))
+import json
 
 from .core.video import Video
 from .segmentation.segmenter import MatchSegmenter
 from .gpt.openai_vision import OpenAIVisionProcessor
 
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+    
 class RacquetSportsMLService:
     openAIProcessor = OpenAIVisionProcessor()
 
@@ -25,7 +23,7 @@ class RacquetSportsMLService:
         return check
 
     def run_processing(self, video_path, output_path) -> {}:
-        logger.info("Video processing started.")
+        print("Video processing started.")
         video = Video(video_path)
 
         # (1) Use GPT model to extract smashes & any other critical metadata
@@ -33,21 +31,22 @@ class RacquetSportsMLService:
         smashes_videos_paths = video.extract_subvideos(smashes, video.fps*2, "smash-", output_path)
 
         # (2) Segment the game into points, return longest point as highlight
+        video.reset()
         group_highlight, player_speeds = self.extract_group_highlight(video, MatchSegmenter(plotting=False))
         group_highlight_video_path = video.extract_subvideo(start_frame=group_highlight[0], end_frame=group_highlight[1], name="highlight-", output_path=output_path)
         
         video.release()
-        logger.info("Video processing finished.")
+        print("Video processing finished.")
 
         return {
             "smashes": smashes_videos_paths, 
             "group_highlight": group_highlight_video_path,
             "player_speeds": player_speeds,
             "supported" : True
-            }
+        }
 
     def extract_smashes(self, video, gpt_vision: OpenAIVisionProcessor):
-        logger.info("Trying to extract smashes.")
+        print("Trying to extract smashes.")
 
         query = """Please answer with Yes or No. Only answer Yes if you are very confident. You will be shown an image of a game of padel, with 4 players playing doubles. 
 A smash in padel is an aggressive overhead shot to finish the point. Is there any player in the image who is performing a smash?"""
@@ -55,12 +54,12 @@ A smash in padel is an aggressive overhead shot to finish the point. Is there an
         return smashes
     
     def extract_group_highlight(self, video, segmenter: MatchSegmenter):
-        logger.info("Trying to extract group highlight.")
+        print("Trying to extract group highlight.")
 
         results_dict = segmenter.segment(video)
         points = results_dict['keyframes']
-
         print("Key segments " + str(points))
+        
         # find longest point & return as group highlight
         longest_duration = 0
         longest_point = (0, video.fps)
@@ -72,4 +71,9 @@ A smash in padel is an aggressive overhead shot to finish the point. Is there an
                 longest_point = point
 
         # return longest point & player_speeds
-        return (longest_point, results_dict['player_speeds'])
+        player_speeds_non_np = {}
+        for player, speeds in results_dict['player_speeds'].items():
+            player_speeds_non_np[player] = speeds.tolist()
+
+        player_speeds_json = json.dumps(player_speeds_non_np)
+        return (longest_point, player_speeds_json)

@@ -163,6 +163,10 @@ class Video:
         #annotated_frame = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
         return annotated_frame
     
+    def reset(self):
+        print("Resetting video pointer to first frame")
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+
     def release(self):
         self.cap.release()
     

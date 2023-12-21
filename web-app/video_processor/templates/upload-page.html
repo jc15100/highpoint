@@ -4,7 +4,7 @@
 <body>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js"></script>
     <script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
-    
+
     <section class="box is-mobile has-text-centered" id="app">
         <div class="block file is-link is-normal is-outlined is-centered">
             <label class="file-label">
@@ -45,12 +45,20 @@
         {% comment %} <div class="block is-centered is-small" v-if="videos.length">
             <progress class="progress is-small mt-5" :value="progress" max="100"> [[ progress ]] </progress>
         </div> {% endcomment %}
-        
+
+        <div class="container" v-show="smashes.length">
+            <div class="columns is-centered">
+              <div class="column is-half">
+                <canvas id="playerSpeedsChart"></canvas>
+              </div>
+            </div>
+        </div>
+
         <div class="block">
-            <h3 class="title smash" v-if="smashes.length">Smashes:</h3>
-            <div v-for="smash in smashes">
+            <h3 class="subtitle is-6" v-show="smashes.length">Smashes</h3>
+            <div class="block" v-for="smash in smashes">
                 <video
-                id="result-{{smash.name}}"
+                id="result-{{smash}}"
                 class="video-js"
                 controls
                 preload="auto"
@@ -66,10 +74,10 @@
         </div>
     
     <div class="block">
-        <h3 class="title group-highlight" v-if="highlights.length">Highlight:</h3>
-        <div v-for="highlight in highlights">
+        <h3 class="subtitle is-6" v-show="highlights.length">Match Highpoint</h3>
+        <div class="block" v-for="highlight in highlights">
             <video
-            id="result-{{highlight.name}}"
+            id="result-{{highlight}}"
             class="video-js"
             controls
             preload="auto"
@@ -84,19 +92,16 @@
     </div>
 </section>
 
-<canvas class="box" id="chartArea" width="100" height="100" v-if="smashes.length"></canvas>
-
 <script>
     const { createApp } = Vue
-    
-    let chartContext = document.getElementById("chartArea").getContext("2d")
-    
+
     createApp({
         data() {
             return {
                 videos: [],
                 smashes: [],
                 highlights: [],
+                video_uploaded: false,
                 progress: 0,
                 unsupported_input: false,
             }
@@ -115,6 +120,7 @@
             },
             upload(file) {
                 this.performUpload(file, event => {
+                    this.video_uploaded = true
                     this.progress = Math.round((100 * event.loaded)/event.total)
                 })
                 .then(response => {
@@ -171,6 +177,18 @@
                     onUploadProgress
                 })
             },
+            processSpeeds(speeds) { 
+                datasets = []
+                Object.entries(speeds).forEach(([playerId, playerSpeeds]) => {
+                    datasets.push({
+                        label: "Player " + playerId + " Speeds ",
+                        data: playerSpeeds
+                    })
+                })
+                const [[firstPlayerId, firstPlayerSpeeds]] = Object.entries(speeds);
+                labels = firstPlayerSpeeds.map((element, index) => index)
+                return [datasets, labels]
+            },
             processResults(response) {
                 const data = response.data
                 if (data['success']) {                    
@@ -182,21 +200,43 @@
                         
                         // add smashes
                         this.smashes = this.smashes.concat(data.results.smashes)
+                        console.log(this.smashes)
                         
+                        // display player speeds
+                        player_speeds = JSON.parse(data.results.player_speeds)
+                        console.log(player_speeds)
+                        
+                        const [datasets, labels] = this.processSpeeds(player_speeds)
+                        const chartContext = document.getElementById("playerSpeedsChart").getContext("2d")
+
                         // populate chart
-                        let chart = new Chart(chartContext, {
+                        const chart = new Chart(chartContext, {
                             type: "line",
-                            // TODO: Pass speeds
-                            data:[{x: 0, y: 5}, {x: 1, y: 15}],
+                            data: {
+                                labels: labels,
+                                datasets: datasets,
+                            },
                             options: {
+                                maintainAspectRatio: false,
                                 scales: {
-                                    x: {
-                                        type: 'linear',
-                                        position: 'bottom'
+                                    y: {
+                                        display: false, // Set display to false to hide Y-axis values
+                                        beginAtZero: true
                                     }
-                                }
+                                },
+                                plugins: {
+                                    title: {
+                                      display: true,
+                                      text: 'Player Speeds',
+                                      font: {
+                                        size: 16,
+                                        weight: 'normal'
+                                      }
+                                    }
+                                  }
                             }
                         })
+                        chart.update()
                         
                     } else {
                         this.unsupported_input = !data.results.supported
@@ -205,7 +245,7 @@
                     console.log("Failed with response " + response)
                 }
             }
-        }
+        },
     })
     .mount('#app')
 </script>

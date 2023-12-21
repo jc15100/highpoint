@@ -2,9 +2,6 @@ import os
 import logging
 import json
 
-logging.basicConfig()
-logger = logging.getLogger('django')
-
 from django.http import JsonResponse
 from django.core.serializers import serialize
 from django.shortcuts import render
@@ -59,11 +56,11 @@ def download_link(request):
             output_path = str(settings.MEDIA_ROOT)
             video_path = youtube.download_link(str(video_url), output_path)
             
-            logger.info("Results path " + str(output_path))
+            print("Results path " + str(output_path))
             results = engine.process(video_path, output_path)
             return JsonResponse({'success': True, 'results': results})
         else:
-            logger.error("Form not valid, skipping save")
+            print("Form not valid, skipping save")
             return JsonResponse({'success': False, 'results': []})
 
 def upload(request):
@@ -76,15 +73,15 @@ def upload(request):
             video = form.save()
             
             video_path = str(settings.BASE_DIR) + str(video.location.url)
-            output_path = str(settings.MEDIA_URL)
+            output_path = str(settings.MEDIA_ROOT)
 
-            logger.info("Input path " + str(video_path))
-            logger.info("Results path " + str(output_path))
+            print("Input path " + str(video_path))
+            print("Results path " + str(output_path))
 
             results = engine.process(video_path, output_path)
             return JsonResponse({'success': True, 'results': results})
         else:
-            logger.error("Form not valid, skipping save")
+            print("Form not valid, skipping save")
             return JsonResponse({'success': False, 'results': []})
 
 def signup(request):

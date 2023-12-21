@@ -3,27 +3,28 @@
 {% block content %}
 {% if user.is_authenticated %}
 <body>
-<h3 class="subtitle is-6">Your stats</h3>
-<canvas class="box" id="chartArea" width="100" height="100"></canvas>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js"></script>
+    <h3 class="subtitle is-6">Your stats</h3>
+    <canvas class="box" id="chartArea" width="100" height="100"></canvas>
 
-<h3 class="subtitle is-6">Your videos</h3>
-<section class="box columns is-multiline has-text-centered is-mobile" id="app">
-    <div v-for="result in content" class="column">
-        <video
-        id="result-{{result.location}}"
-        class="video-js"
-        controls
-        preload="auto"
-        width="320"
-        height="132">
-        <source :src="result.location" type="video/mp4" />
-        <p class="vjs-no-js">
-            To view this video please enable JavaScript, and consider upgrading to a
-            web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-        </p>
-    </video>
-</div>
-</section>
+    <h3 class="subtitle is-6">Your videos</h3>
+    <section class="box columns is-multiline has-text-centered is-mobile" id="app">
+        <div v-for="result in content" class="column">
+            <video
+            id="result-{{result.location}}"
+            class="video-js"
+            controls
+            preload="auto"
+            width="320"
+            height="132">
+            <source :src="result.location" type="video/mp4" />
+            <p class="vjs-no-js">
+                To view this video please enable JavaScript, and consider upgrading to a
+                web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+            </p>
+        </video>
+    </div>
+    </section>
 </body>
 {% else %}
 <body>
@@ -32,6 +33,8 @@
 
 <script>
     const { createApp } = Vue
+    let chartContext = document.getElementById("chartArea").getContext("2d")
+
     createApp({
         data() {
             return {

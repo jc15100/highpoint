@@ -46,16 +46,20 @@ class MatchSegmenter:
         else:
             flows_per_player = self.detection_flow(video, YOLOStep.person_name)
             # use player with id=1 for segmentation
-            flows = flows_per_player[1]
+            if 1 in flows_per_player:
+                flows = flows_per_player[1]
+            else:
+                flows = []
 
         if len(flows) > 0:
             minima = argrelmin(flows, order=self.order)[0]
-            print("minima: " + str(minima))
+            print("Computed minima: " + str(minima))
 
             if not minima:
                 print("No minima, setting to first")
                 minima = [flows[0]]
 
+            # find key frames
             max_frame_count = video.get_frame_count()
             keyframes_points = []
             for idx, min in enumerate(minima):
@@ -77,8 +81,8 @@ class MatchSegmenter:
     Use this method if process memory is not a concern or video is less than 10GB.
     '''
     def detection_flow(self, video: Video, object_class_name):
-        boxes = []
         boxes_per_player = {}
+        print("Running YOLO to detect players.")
 
         while True:
             current_frame = video.read_frame()
@@ -98,18 +102,6 @@ class MatchSegmenter:
                         break
 
                 for result in results:
-                    # pick first box for speed calculations for segmentation
-                    # first_box = result.boxes[0]
-                    # class_value = int(first_box.cls[0].numpy())
-                    # if result.names is not None:
-                    #     class_name = result.names[class_value]
-                    #     if class_name == object_class_name:
-                    #         # extract top left corner (x, y)
-                    #         x = first_box.xyxy[0][0].numpy()
-                    #         y = first_box.xyxy[0][1].numpy()
-                    #         boxes.append((x, y))
-                    #         print("x %s and y %s" % (x, y))
-                    
                     for box in result.boxes:
                         if box.id is not None and result.names is not None:
                             id = int(box.id[0].numpy())
@@ -126,8 +118,9 @@ class MatchSegmenter:
                                 else:
                                     boxes_per_player[id].append((x, y))
             else:
+                print("Exiting processing loop.")
                 break
-        print("Finished detection_flow with %d boxe(s) out of %d frame(s)" % (len(boxes),video.get_frame_count()))
+        print("Finished detection_flow with %d boxe(s) out of %d frame(s)" % (len(boxes_per_player),video.get_frame_count()))
         
         if len(boxes_per_player) > 0:
             # compute approx. speeds
