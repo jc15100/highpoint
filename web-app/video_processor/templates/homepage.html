@@ -2,11 +2,26 @@
 
 {% block content %}
 {% if user.is_authenticated %}
+<style>
+    /* Custom CSS for delete button */
+    .video-js .vjs-delete-button {
+      cursor: pointer;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #ff5733;
+      color: #fff;
+      border: none;
+      padding: 8px;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+  </style>
 <body>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js"></script>
     <section class="is-mobile" id="app">
+        <h3 class="subtitle is-6">Your stats</h3>
         <div class="box">
-            <h3 class="subtitle is-6">Your stats</h3>
             <nav class="level">
                 <div class="level-item has-text-centered">
                     <div>
@@ -34,9 +49,10 @@
                 </div>
             </nav>
         </div>
+
+        <h3 class="subtitle is-6">Your uploads</h3>
         <div class="box columns is-multiline has-text-centered">
-            <h3 class="subtitle is-6">Your uploads</h3>
-            <div v-for="result in videos" class="column is-3">
+            <div v-for="result in videos" class="column is-3" @contextmenu="rightClickVideo">
                 <video id="result-{{result.filesystem_url}}" class="video-js" controls preload="auto" width="320" height="132">
                     <source :src="result.filesystem_url" type="video/mp4" />
                     <p class="vjs-no-js">
@@ -47,8 +63,8 @@
             </div>
         </div>
         
+        <h3 class="subtitle is-6">Your smashes</h3>
         <div class="box columns is-multiline has-text-centered">
-            <h3 class="subtitle is-6">Your smashes</h3>
             <div v-for="result in profile.smashes" class="column is-3">
                 <video id="result-{{result.filesystem_url}}" class="video-js" controls preload="auto" width="320" height="132">
                     <source :src="result.filesystem_url" type="video/mp4" />
@@ -56,12 +72,13 @@
                         To view this video please enable JavaScript, and consider upgrading to a
                         web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
                     </p>
+                    <button class="vjs-delete-button">-</button>
                 </video>
             </div>
         </div>
-        
+    
+        <h3 class="subtitle is-6">Your highlights</h3>
         <div class="box columns is-multiline has-text-centered">
-            <h3 class="subtitle is-6">Your highlights</h3>
             <div v-for="result in profile.highlights" class="column is-3">
                 <video id="result-{{result.filesystem_url}}" class="video-js" controls preload="auto" width="320" height="132">
                     <source :src="result.filesystem_url" type="video/mp4" />
@@ -69,6 +86,7 @@
                         To view this video please enable JavaScript, and consider upgrading to a
                         web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
                     </p>
+                    <button class="vjs-delete-button">Delete</button>
                 </video>
             </div>
         </div>
@@ -122,6 +140,9 @@
                 } else {
                     return 0
                 }
+            },
+            rightClickVideo(event) {
+                console.log("Right click video!" + event)
             }
         },
         created() {
