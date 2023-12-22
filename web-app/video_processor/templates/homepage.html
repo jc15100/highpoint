@@ -36,61 +36,43 @@
         </div>
         <div class="box columns is-multiline has-text-centered">
             <h3 class="subtitle is-6">Your uploads</h3>
-            <div v-for="result in videos" class="column">
-                <video
-                id="result-{{result.filesystem_url}}"
-                class="video-js"
-                controls
-                preload="auto"
-                width="320"
-                height="132">
-                <source :src="result.filesystem_url" type="video/mp4" />
-                <p class="vjs-no-js">
-                    To view this video please enable JavaScript, and consider upgrading to a
-                    web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-                </p>
-            </video>
+            <div v-for="result in videos" class="column is-3">
+                <video id="result-{{result.filesystem_url}}" class="video-js" controls preload="auto" width="320" height="132">
+                    <source :src="result.filesystem_url" type="video/mp4" />
+                    <p class="vjs-no-js">
+                        To view this video please enable JavaScript, and consider upgrading to a
+                        web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                    </p>
+                </video>
             </div>
         </div>
-
+        
         <div class="box columns is-multiline has-text-centered">
             <h3 class="subtitle is-6">Your smashes</h3>
-            <div v-for="result in smashes" class="column">
-                <video
-                id="result-{{result.filesystem_url}}"
-                class="video-js"
-                controls
-                preload="auto"
-                width="320"
-                height="132">
-                <source :src="result.filesystem_url" type="video/mp4" />
-                <p class="vjs-no-js">
-                    To view this video please enable JavaScript, and consider upgrading to a
-                    web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-                </p>
-            </video>
+            <div v-for="result in profile.smashes" class="column is-3">
+                <video id="result-{{result.filesystem_url}}" class="video-js" controls preload="auto" width="320" height="132">
+                    <source :src="result.filesystem_url" type="video/mp4" />
+                    <p class="vjs-no-js">
+                        To view this video please enable JavaScript, and consider upgrading to a
+                        web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                    </p>
+                </video>
             </div>
         </div>
         
         <div class="box columns is-multiline has-text-centered">
             <h3 class="subtitle is-6">Your highlights</h3>
-            <div v-for="result in highlights" class="column">
-                <video
-                id="result-{{result.filesystem_url}}"
-                class="video-js"
-                controls
-                preload="auto"
-                width="320"
-                height="132">
-                <source :src="result.filesystem_url" type="video/mp4" />
-                <p class="vjs-no-js">
-                    To view this video please enable JavaScript, and consider upgrading to a
-                    web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-                </p>
-            </video>
+            <div v-for="result in profile.highlights" class="column is-3">
+                <video id="result-{{result.filesystem_url}}" class="video-js" controls preload="auto" width="320" height="132">
+                    <source :src="result.filesystem_url" type="video/mp4" />
+                    <p class="vjs-no-js">
+                        To view this video please enable JavaScript, and consider upgrading to a
+                        web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                    </p>
+                </video>
             </div>
         </div>
-</section>
+    </section>
 </body>
 {% else %}
 <body>
@@ -104,9 +86,7 @@
         data() {
             return {
                 videos: [],
-                profile: {},
-                smashes: [],
-                highlights: [],
+                profile: {}
             }
         },
         delimiters: ['[[', ']]'],
@@ -127,17 +107,21 @@
                     this.profile.smashes.forEach((result) => {
                         console.log(result.filesystem_url)
                     })
-
+                    
                     console.log("Highlights")
                     this.profile.highlights.forEach((result) => {
                         console.log(result.filesystem_url)
                     })
-
+                    
                     console.log("Players " + this.profile.players)
                 })
             },
             smashesCount() {
-                return this.profile.smashes.length
+                if (this.profile !== undefined && this.profile.smashes !== undefined) {
+                    return this.profile.smashes.length
+                } else {
+                    return 0
+                }
             }
         },
         created() {

@@ -4,250 +4,249 @@
 <body>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js"></script>
     <script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
-
-    <section class="box is-mobile has-text-centered" id="app">
-        <div class="block file is-link is-normal is-outlined is-centered">
-            <label class="file-label">
-                <input class="file-input" type="file" ref="file" @change="selectFile" multiple>
-                
-                <span class="file-cta">
-                    <span class="file-icon">
-                        <i class="fas fa-upload"></i>
-                    </span>
-                    <span class="file-label">
-                        Upload your video…
-                    </span>
-                </span>
-            </label>
-        </div>
-        
-        <div class="block container is-centered level">
-            <p class="control has-icons-left has-icons-right level-item">
-                <input class="input is-link is-small" type="url" ref="videoUrl" placeholder="Or Youtube Link" @keyup.enter="downloadLink">
-                <span class="icon is-small is-left">
-                    <i class="gg-youtube"></i>
-                </span>
-                <span class="icon is-small is-right">
-                    <i class="fas fa-check"></i>
-                </span>
-            </p>
-        </div>
-        
-        <article class="message is-danger" v-if="unsupported_input">
-            <div class="message-header">
-                <p>Warning</p>
-                <button class="delete" aria-label="delete"></button>
-            </div>
-            <div class="message-body">Apologies, but the video you've provided features a sport that is not supported.</div>
-        </article>
-        
-        
-        {% comment %} <div class="block is-centered is-small" v-if="videos.length">
-            <progress class="progress is-small mt-5" :value="progress" max="100"> [[ progress ]] </progress>
-        </div> {% endcomment %}
-
-        <div class="container" v-show="smashes.length">
-            <div class="columns is-centered">
-              <div class="column is-half">
-                <canvas id="playerSpeedsChart"></canvas>
-              </div>
-            </div>
-        </div>
-
-        <div class="block">
-            <h3 class="subtitle is-6" v-show="smashes.length">Smashes</h3>
-            <div class="block" v-for="smash in smashes">
-                <video
-                id="result-{{smash}}"
-                class="video-js"
-                controls
-                preload="auto"
-                width="640"
-                height="264">
-                <source :src="smash" type="video/mp4" />
-                <p class="vjs-no-js">
-                    To view this video please enable JavaScript, and consider upgrading to a
-                    web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-                </p>
-                </video>
-            </div>
-        </div>
     
-    <div class="block">
-        <h3 class="subtitle is-6" v-show="highlights.length">Match Highpoint</h3>
-        <div class="block" v-for="highlight in highlights">
-            <video
-            id="result-{{highlight}}"
-            class="video-js"
-            controls
-            preload="auto"
-            width="640"
-            height="264">
-            <source :src="highlight" type="video/mp4" />
-            <p class="vjs-no-js">
-                To view this video please enable JavaScript, and consider upgrading to a
-                web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-            </p>
-        </video>
-    </div>
-</section>
-
-<script>
-    const { createApp } = Vue
-
-    createApp({
-        data() {
-            return {
-                videos: [],
-                smashes: [],
-                highlights: [],
-                video_uploaded: false,
-                progress: 0,
-                unsupported_input: false,
-            }
-        },
-        delimiters: ['[[', ']]'],
-        methods: {
-            selectFile() {
-                Array.from(this.$refs.file.files).forEach(file => {
-                    this.upload(file)
-                    
-                    this.videos.push({
-                        'name': file.name,
-                        'status': 'is uploading'
-                    })
-                })
-            },
-            upload(file) {
-                this.performUpload(file, event => {
-                    this.video_uploaded = true
-                    this.progress = Math.round((100 * event.loaded)/event.total)
-                })
-                .then(response => {
-                    this.processResults(response)
-                })
-                .catch(error => {
-                    console.log("Error " + error)
-                    this.progress = 0
-                    this.videos.forEach(video => {
-                        if (video.name === file.name) {
-                            video['status'] = 'failed'
-                        }
-                    })
-                })
-            },
-            downloadLink() {
-                this.performDownload(this.$refs.videoUrl.value, event => {
-                    this.progress = Math.round((100 * event.loaded)/event.total)
-                })
-                .then(response => {
-                    this.processResults(response)
-                })
-                .catch(error => {
-                    console.log("Error " + error)
-                    this.progress = 0
-                    this.videos.forEach(video => {
-                        if (video.name === file.name) {
-                            video['status'] = 'failed'
-                        }
-                    })
-                })
-            },
-            performUpload(file, onUploadProgress) {
-                let formData = new FormData()
-                formData.append('filesystem_url', file)
+    <section class="is-mobile" id="app">
+        <div class="container">
+            <div class="box">
+                <div class="block file is-link is-flex is-centered">
+                    <label class="file-label">
+                        <input class="file-input" type="file" ref="file" @change="selectFile" multiple>
+                        
+                        <span class="file-cta">
+                            <span class="file-icon">
+                                <i class="fas fa-upload"></i>
+                            </span>
+                            <span class="file-label">
+                                Upload your video…
+                            </span>
+                        </span>
+                    </label>
+                </div>
                 
-                return axios.post('/upload/', formData, {
-                    headers: {
-                        "Content-Type": "multipart/form-data",
-                        "X-CSRFToken": "{{ csrf_token }}"
-                    },
-                    onUploadProgress
-                })
+                <div class="columns is-centered">
+                    <div class="control has-icons-left has-icons-right">
+                        <input class="input is-small" type="url" ref="videoUrl" placeholder="or add a link to Youtube" @keyup.enter="downloadLink">
+                        <span class="icon is-small is-left">
+                            <i class="gg-youtube"></i>
+                        </span>
+                        <span class="icon is-small is-right">
+                            <i class="fas fa-check"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="box" v-show="unsupported_input">
+                <article class="message is-danger">
+                    <div class="message-header">
+                        <p>Warning</p>
+                        <button class="delete" aria-label="delete"></button>
+                    </div>
+                    <div class="message-body">Apologies, but the video you've provided features a sport that is not supported.</div>
+                </article>
+            </div>
+            
+            {% comment %} <div class="block is-centered is-small" v-if="videos.length">
+                <progress class="progress is-small mt-5" :value="progress" max="100"> [[ progress ]] </progress>
+            </div> {% endcomment %}
+            <div class="box" v-show="smashes.length">
+                <div class="container">
+                    <div class="columns is-centered">
+                        <div class="column is-half">
+                            <canvas id="playerSpeedsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="box" v-show="smashes.length">
+                <div class="block">
+                    <h3 class="subtitle is-6">Smashes</h3>
+                    <div class="block" v-for="smash in smashes">
+                        <video id="result-{{smash}}" class="video-js" controls preload="auto" width="640" height="264">
+                            <source :src="smash" type="video/mp4" />
+                            <p class="vjs-no-js">
+                                To view this video please enable JavaScript, and consider upgrading to a
+                                web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                            </p>
+                        </video>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="box" v-show="highlights.length">
+                <div class="block">
+                    <h3 class="subtitle is-6">Match Highpoint</h3>
+                    <div class="block" v-for="highlight in highlights">
+                        <video id="result-{{highlight}}" class="video-js" controls preload="auto" width="640" height="264">
+                            <source :src="highlight" type="video/mp4" />
+                            <p class="vjs-no-js">
+                                To view this video please enable JavaScript, and consider upgrading to a
+                                web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                            </p>
+                        </video>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <script>
+        const { createApp } = Vue
+        
+        createApp({
+            data() {
+                return {
+                    videos: [],
+                    smashes: [],
+                    highlights: [],
+                    video_uploaded: false,
+                    progress: 0,
+                    unsupported_input: false,
+                }
             },
-            performDownload(url, onUploadProgress) {
-                let formData = new FormData()
-                formData.append('web_url', url)
-                
-                return axios.post('/download_link/', formData, {
-                    headers: {
-                        "Content-Type": "multipart/form-data",
-                        "X-CSRFToken": "{{ csrf_token }}"
-                    },
-                    onUploadProgress
-                })
-            },
-            processSpeeds(speeds) { 
-                datasets = []
-                Object.entries(speeds).forEach(([playerId, playerSpeeds]) => {
-                    datasets.push({
-                        label: "Player " + playerId + " Speeds ",
-                        data: playerSpeeds
+            delimiters: ['[[', ']]'],
+            methods: {
+                selectFile() {
+                    Array.from(this.$refs.file.files).forEach(file => {
+                        this.upload(file)
+                        
+                        this.videos.push({
+                            'name': file.name,
+                            'status': 'is uploading'
+                        })
                     })
-                })
-                const [[firstPlayerId, firstPlayerSpeeds]] = Object.entries(speeds);
-                labels = firstPlayerSpeeds.map((element, index) => index)
-                return [datasets, labels]
-            },
-            processResults(response) {
-                const data = response.data
-                if (data['success']) {                    
-                    console.log(data.results)
-                    
-                    if (data.results.supported) {
-                        // add group_highlights
-                        this.highlights.push(data.results.group_highlight)
-                        
-                        // add smashes
-                        this.smashes = this.smashes.concat(data.results.smashes)
-                        console.log(this.smashes)
-                        
-                        // display player speeds
-                        player_speeds = JSON.parse(data.results.player_speeds)
-                        console.log(player_speeds)
-                        
-                        const [datasets, labels] = this.processSpeeds(player_speeds)
-                        const chartContext = document.getElementById("playerSpeedsChart").getContext("2d")
-
-                        // populate chart
-                        const chart = new Chart(chartContext, {
-                            type: "line",
-                            data: {
-                                labels: labels,
-                                datasets: datasets,
-                            },
-                            options: {
-                                maintainAspectRatio: false,
-                                scales: {
-                                    y: {
-                                        display: false, // Set display to false to hide Y-axis values
-                                        beginAtZero: true
-                                    }
-                                },
-                                plugins: {
-                                    title: {
-                                      display: true,
-                                      text: 'Player Speeds',
-                                      font: {
-                                        size: 16,
-                                        weight: 'normal'
-                                      }
-                                    }
-                                  }
+                },
+                upload(file) {
+                    this.performUpload(file, event => {
+                        this.video_uploaded = true
+                        this.progress = Math.round((100 * event.loaded)/event.total)
+                    })
+                    .then(response => {
+                        this.processResults(response)
+                    })
+                    .catch(error => {
+                        console.log("Error " + error)
+                        this.progress = 0
+                        this.videos.forEach(video => {
+                            if (video.name === file.name) {
+                                video['status'] = 'failed'
                             }
                         })
-                        chart.update()
+                    })
+                },
+                downloadLink() {
+                    this.performDownload(this.$refs.videoUrl.value, event => {
+                        this.progress = Math.round((100 * event.loaded)/event.total)
+                    })
+                    .then(response => {
+                        this.processResults(response)
+                    })
+                    .catch(error => {
+                        console.log("Error " + error)
+                        this.progress = 0
+                        this.videos.forEach(video => {
+                            if (video.name === file.name) {
+                                video['status'] = 'failed'
+                            }
+                        })
+                    })
+                },
+                performUpload(file, onUploadProgress) {
+                    let formData = new FormData()
+                    formData.append('filesystem_url', file)
+                    
+                    return axios.post('/upload/', formData, {
+                        headers: {
+                            "Content-Type": "multipart/form-data",
+                            "X-CSRFToken": "{{ csrf_token }}"
+                        },
+                        onUploadProgress
+                    })
+                },
+                performDownload(url, onUploadProgress) {
+                    let formData = new FormData()
+                    formData.append('web_url', url)
+                    
+                    return axios.post('/download_link/', formData, {
+                        headers: {
+                            "Content-Type": "multipart/form-data",
+                            "X-CSRFToken": "{{ csrf_token }}"
+                        },
+                        onUploadProgress
+                    })
+                },
+                processSpeeds(speeds) { 
+                    datasets = []
+                    Object.entries(speeds).forEach(([playerId, playerSpeeds]) => {
+                        datasets.push({
+                            label: "Player " + playerId + " Speeds ",
+                            data: playerSpeeds
+                        })
+                    })
+                    const [[firstPlayerId, firstPlayerSpeeds]] = Object.entries(speeds);
+                    labels = firstPlayerSpeeds.map((element, index) => index)
+                    return [datasets, labels]
+                },
+                processResults(response) {
+                    const data = response.data
+                    if (data['success']) {                    
+                        console.log(data.results)
                         
+                        if (data.results.supported) {
+                            // add group_highlights
+                            this.highlights.push(data.results.group_highlight)
+                            
+                            // add smashes
+                            this.smashes = this.smashes.concat(data.results.smashes)
+                            console.log(this.smashes)
+                            
+                            // display player speeds
+                            player_speeds = JSON.parse(data.results.player_speeds)
+                            console.log(player_speeds)
+                            
+                            const [datasets, labels] = this.processSpeeds(player_speeds)
+                            const chartContext = document.getElementById("playerSpeedsChart").getContext("2d")
+                            
+                            // populate chart
+                            const chart = new Chart(chartContext, {
+                                type: "line",
+                                data: {
+                                    labels: labels,
+                                    datasets: datasets,
+                                },
+                                options: {
+                                    maintainAspectRatio: false,
+                                    scales: {
+                                        y: {
+                                            display: false, // Set display to false to hide Y-axis values
+                                            beginAtZero: true
+                                        }
+                                    },
+                                    plugins: {
+                                        title: {
+                                            display: true,
+                                            text: 'Player Speeds',
+                                            font: {
+                                                size: 16,
+                                                weight: 'normal'
+                                            }
+                                        }
+                                    }
+                                }
+                            })
+                            chart.update()
+                            
+                        } else {
+                            this.unsupported_input = !data.results.supported
+                        }
                     } else {
-                        this.unsupported_input = !data.results.supported
+                        console.log("Failed with response " + response)
                     }
-                } else {
-                    console.log("Failed with response " + response)
                 }
-            }
-        },
-    })
-    .mount('#app')
-</script>
+            },
+        })
+        .mount('#app')
+    </script>
 </body>
 {% endblock %}
