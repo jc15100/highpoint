@@ -34,7 +34,7 @@ class OpenAIVisionProcessor:
         return check_done
 
     def process_video(self, video, query):
-        keyframes = self.csv.csvToArray(self.keyframes_file)
+        keyframes = None#self.csv.csvToArray(self.keyframes_file)
 
         if keyframes is not None:
             print("Key frames already computed, returning")

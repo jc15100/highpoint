@@ -38,7 +38,7 @@ class MatchSegmenter:
     points are estipulated to be parts in between local minima.
     '''
     def segment(self, video: Video):
-        flows = self.csv.loadDictionary(self.filename)
+        flows = None#self.csv.loadDictionary(self.filename)
 
         if flows is not None:
             print("Optical flow already computed for video, segmenting")
