@@ -1,5 +1,7 @@
 import numpy as np
 import json
+import cv2
+import os
 
 from .core.video import Video
 from .segmentation.segmenter import MatchSegmenter
@@ -30,18 +32,21 @@ class RacquetSportsMLService:
         smashes = self.extract_smashes(video, self.openAIProcessor)
         smashes_videos_paths = video.extract_subvideos(smashes, video.fps*2, "smash-", output_path)
 
-        # (2) Segment the game into points, return longest point as highlight
         video.reset()
-        group_highlight, player_speeds = self.extract_group_highlight(video, MatchSegmenter(plotting=False))
+
+        # (2) Segment the game into points, return longest point as highlight        
+        group_highlight, player_speeds, player_frames = self.extract_group_highlight(video, MatchSegmenter(plotting=False), output_path)
         group_highlight_video_path = video.extract_subvideo(start_frame=group_highlight[0], end_frame=group_highlight[1], name="highlight-", output_path=output_path)
         
         video.release()
+
         print("Video processing finished.")
 
         return {
             "smashes": smashes_videos_paths, 
             "group_highlight": group_highlight_video_path,
             "player_speeds": player_speeds,
+            "player_frames": player_frames,
             "supported" : True
         }
 
@@ -53,7 +58,7 @@ A smash in padel is an aggressive overhead shot to finish the point. Is there an
         smashes = gpt_vision.process_video(video, query)
         return smashes
     
-    def extract_group_highlight(self, video, segmenter: MatchSegmenter):
+    def extract_group_highlight(self, video, segmenter: MatchSegmenter, output_path):
         print("Trying to extract group highlight.")
 
         results_dict = segmenter.segment(video)
@@ -76,4 +81,15 @@ A smash in padel is an aggressive overhead shot to finish the point. Is there an
             player_speeds_non_np[player] = speeds.tolist()
 
         player_speeds_json = json.dumps(player_speeds_non_np)
-        return (longest_point, player_speeds_json)
+
+        # save frames to filesystem
+        player_frames = results_dict['player_frames']
+        player_frames_paths = []
+        for id, player in enumerate(player_frames):
+            frame_filename = os.path.join(output_path, f"frame_{id:04d}.png")
+            cv2.imwrite(frame_filename, player)
+            player_frames_paths.append(frame_filename)
+        
+        print(player_frames_paths)
+
+        return (longest_point, player_speeds_json, player_frames_paths)

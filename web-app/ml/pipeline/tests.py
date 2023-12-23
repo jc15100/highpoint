@@ -20,7 +20,9 @@ class TestSegmenter(unittest.TestCase):
         results_dict = segmenter.segment(video=test_video)
         self.assertTrue(results_dict.__contains__('keyframes'))
         self.assertTrue(results_dict.__contains__('player_speeds'))
+        self.assertTrue(results_dict.__contains__('player_frames'))
         self.assertTrue(len(results_dict['player_speeds']) > 0)
+        self.assertTrue(len(results_dict['player_frames']) > 0)
 
 if __name__ == '__main__':
     unittest.main()

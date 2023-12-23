@@ -56,6 +56,12 @@
                             <canvas id="playerSpeedsChart"></canvas>
                         </div>
                     </div>
+                    <div class="columns is-centered is-mobile">
+                        <div class="column is-narrow has-text-centered" width="128" v-for="(image, index) in player_frames">
+                            <img class="image is-96x96" style="border-radius:50%" :src="image" :alt="'Player ' + (index + 1)"/>
+                            <p class="subtitle is-6">Player [[ index + 1 ]]</p>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -103,6 +109,7 @@
                     video_uploaded: false,
                     progress: 0,
                     unsupported_input: false,
+                    player_frames: []
                 }
             },
             delimiters: ['[[', ']]'],
@@ -180,7 +187,7 @@
                     datasets = []
                     Object.entries(speeds).forEach(([playerId, playerSpeeds]) => {
                         datasets.push({
-                            label: "Player " + playerId + " Speeds ",
+                            label: "Player " + playerId,
                             data: playerSpeeds
                         })
                     })
@@ -207,6 +214,9 @@
                             
                             const [datasets, labels] = this.processSpeeds(player_speeds)
                             const chartContext = document.getElementById("playerSpeedsChart").getContext("2d")
+
+                            this.player_frames = data.results.player_frames
+                            console.log(this.player_frames)
                             
                             // populate chart
                             const chart = new Chart(chartContext, {

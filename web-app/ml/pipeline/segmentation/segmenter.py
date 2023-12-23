@@ -15,6 +15,8 @@ from ..core.video import Video
 Segments a sports match video into points
 '''
 class MatchSegmenter:
+    scale_factor = 0.1
+
     def __init__(self, plotting) -> None:
         self.flow = OpticalFlow()
         self.plotting = plotting
@@ -44,7 +46,7 @@ class MatchSegmenter:
                 plt.plot(flows[1])
                 plt.show()
         else:
-            flows_per_player = self.detection_flow(video, YOLOStep.person_name)
+            flows_per_player, player_frames = self.detection_flow(video, YOLOStep.person_name)
             # use player with id=1 for segmentation
             if 1 in flows_per_player:
                 flows = flows_per_player[1]
@@ -72,7 +74,8 @@ class MatchSegmenter:
                 keyframes_points.append((start_frame, end_frame))
 
             return {'keyframes': keyframes_points,
-                    'player_speeds': flows_per_player}
+                    'player_speeds': flows_per_player,
+                    'player_frames': player_frames}
         else:
             return {}
 
@@ -81,16 +84,18 @@ class MatchSegmenter:
     Use this method if process memory is not a concern or video is less than 10GB.
     '''
     def detection_flow(self, video: Video, object_class_name):
-        boxes_per_player = {}
         print("Running YOLO to detect players.")
+        
+        boxes_per_player = {}
+        player_frames = []
 
         while True:
             current_frame = video.read_frame()
 
             if current_frame is not None:
-                current_frame = cv2.resize(current_frame, (0, 0), fx = 0.1, fy = 0.1)
+                frame_small = cv2.resize(current_frame, (0, 0), fx = self.scale_factor, fy = self.scale_factor)
                 # call YOLO and extract detections
-                results = self.yolo.track(current_frame)
+                results = self.yolo.track(frame_small)
                 
                 if self.plotting == True:
                     annotated_frame = results[0].plot()
@@ -100,7 +105,7 @@ class MatchSegmenter:
                     # Break the loop if 'q' is pressed
                     if cv2.waitKey(1) & 0xFF == ord("q"):
                         break
-
+                
                 for result in results:
                     for box in result.boxes:
                         if box.id is not None and result.names is not None:
@@ -112,16 +117,32 @@ class MatchSegmenter:
                                 # extract top left corner (x, y)
                                 x = box.xyxy[0][0].numpy()
                                 y = box.xyxy[0][1].numpy()
+                                
+                                # get width and height to extract player frames
+                                w = box.xywh[0][2].numpy()
+                                h = box.xywh[0][3].numpy()
+
+                                print("id " + str(id) + " class " + str(class_name) + " x " + str(x) + " y " + str(y))
 
                                 if id not in boxes_per_player:
                                     boxes_per_player[id] = [(x ,y)]
+
+                                    # multiply each value by scale (image was downsized when processed)
+                                    player_frame = current_frame[int(y*(1/self.scale_factor)):int(y*(1/self.scale_factor))+int(h*(1/self.scale_factor)), 
+                                                                 int(x*(1/self.scale_factor)):int(x*(1/self.scale_factor))+int(w*(1/self.scale_factor))]
+                                    if self.plotting == True:
+                                        cv2.imshow('id ' + str(id), player_frame)
+                                    
+                                    player_frames.append(player_frame)
                                 else:
                                     boxes_per_player[id].append((x, y))
             else:
-                print("Exiting processing loop.")
+                print("Done with frames, exiting YOLO loop")
                 break
-        print("Finished detection_flow with %d boxe(s) out of %d frame(s)" % (len(boxes_per_player),video.get_frame_count()))
         
+        print("Finished detection_flow with %d boxe(s) out of %d frame(s)" % (len(boxes_per_player),video.get_frame_count()))
+        print("Extracted %d player frames (4 expected) " % len(player_frames))
+
         if len(boxes_per_player) > 0:
             # compute approx. speeds
             frame_interval = 1/video.get_frame_rate()
@@ -130,12 +151,12 @@ class MatchSegmenter:
             for player, boxes in boxes_per_player.items():
                 speeds = self._object_speed(boxes, frame_interval)
 
+                #store raw speeds in map
+                speeds_per_player[player] = speeds
+                
                 if len(speeds) > 0:
                     # convolve the 1D array of speeds
                     speeds = np.convolve(speeds, np.ones(self.convolve_window)/self.convolve_window, mode='valid')
-
-                    #store in map
-                    speeds_per_player[player] = speeds
 
             # save to CSV for later
             self.csv.saveDictionary(speeds_per_player, self.filename)
@@ -145,9 +166,9 @@ class MatchSegmenter:
                 plt.plot(speeds_per_player[1])
                 plt.show()
 
-            return speeds_per_player
+            return (speeds_per_player, player_frames)
         else:
-            return []
+            return ()
 
     '''
     Computes optical flow across each frame in a Video object (OpenCV VideoCapture) in memory.
@@ -277,6 +298,6 @@ class MatchSegmenter:
             cv2.imshow('frame', bgr)
 
     def _prepare_frame(self, frame):
-        frame = cv2.resize(frame, (0, 0), fx = 0.1, fy = 0.1)
+        frame = cv2.resize(frame, (0, 0), fx = self.scale_factor, fy = self.scale_factor)
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         return frame
