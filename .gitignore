@@ -1,12 +1,12 @@
 .DS_Store
 *.pyc
-web-app/media/
+media/
 
 __pycache__/
 
 # Ignore collected static and media files
-web-app/mediafiles/
-web-app/staticfiles/
+mediafiles/
+staticfiles/
 
 # Ignore the local DB
 db.sqlite3
