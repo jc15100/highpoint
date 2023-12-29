@@ -26,10 +26,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(DEBUG=(bool, False))
 env_file = os.path.join(BASE_DIR, ".env")
 
+SECRET_KEY = None
+
 if os.path.isfile(env_file):
     # Use a local secret file, if provided
     env.read_env(env_file)
-# [START_EXCLUDE]
 elif os.getenv("TRAMPOLINE_CI", None):
     # Create local settings if running with CI, for unit testing
     placeholder = (
@@ -37,7 +38,6 @@ elif os.getenv("TRAMPOLINE_CI", None):
         f"DATABASE_URL=sqlite://{os.path.join(BASE_DIR, 'db.sqlite3')}"
     )
     env.read_env(io.StringIO(placeholder))
-# [END_EXCLUDE]
 elif os.environ.get("GOOGLE_CLOUD_PROJECT", None):
     # Pull secrets from Secret Manager
     project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
@@ -52,7 +52,6 @@ else:
     print("No Google Cloud setup, using hardcoded key")
     SECRET_KEY = "django-insecure-#=b2b6b14w+v=(+u_9flgw^2^lcg45q!=)u!4-5$!obs!ma&!@"
 
-# [END gaestd_py_django_secret_config]
 if SECRET_KEY is None:
     SECRET_KEY = env("SECRET_KEY")
 
