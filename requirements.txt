@@ -5,6 +5,7 @@ psycopg2-binary==2.9.9
 django-cors-headers
 dj-stripe
 djangorestframework
+gunicorn
 #google-api-python-client
 
 #ml
