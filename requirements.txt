@@ -16,5 +16,5 @@ scipy
 tensorflow
 ultralytics
 lapx
-openai
-pytube
+#openai
+#pytube
