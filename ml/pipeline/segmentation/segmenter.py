@@ -1,9 +1,8 @@
 import cv2
 import numpy as np
-import os
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
-#from scipy.signal import argrelmin
+from scipy.signal import argrelmin
 from PIL import Image
 
 from ..core.yolo import YOLOStep
@@ -43,8 +42,8 @@ class MatchSegmenter:
         if flows is not None:
             print("Optical flow already computed for video, segmenting")
             if self.plotting == True:
-                #plt.plot(flows[1])
-                #plt.show()
+                plt.plot(flows[1])
+                plt.show()
         else:
             flows_per_player, player_frames = self.detection_flow(video, YOLOStep.person_name)
             # use player with id=1 for segmentation
@@ -54,7 +53,7 @@ class MatchSegmenter:
                 flows = []
 
         if len(flows) > 0:
-            minima = []#argrelmin(flows, order=self.order)[0]
+            minima = argrelmin(flows, order=self.order)[0]
             print("Computed minima: " + str(minima))
 
             if not minima:
@@ -163,8 +162,8 @@ class MatchSegmenter:
 
             if self.plotting == True:
                 # plot one of the speeds
-                #plt.plot(speeds_per_player[1])
-                #plt.show()
+                plt.plot(speeds_per_player[1])
+                plt.show()
 
             return (speeds_per_player, player_frames)
         else:
@@ -209,8 +208,8 @@ class MatchSegmenter:
         self.csv.saveArrayToCSV(flows_sums, "flows.csv")
         
         if self.plotting == True:
-            #plt.plot(flows_sums, color = 'blue')
-            #plt.show()
+            plt.plot(flows_sums, color = 'blue')
+            plt.show()
 
         return (frame_segments, flows_sums)
 
@@ -253,15 +252,12 @@ class MatchSegmenter:
         self.csv.saveArrayToCSV(flows_sums, self.filename)
 
         if self.plotting == True:
-            #plt.plot(flows_sums, color = 'blue')
-            #plt.show()
+            plt.plot(flows_sums, color = 'blue')
+            plt.show()
 
         return (frame_segments, flows_sums)
     
     # MARK: Private methods
-
-    def _minima_numpy(self, data):
-        pass
 
     def _object_speed(self, positions, time_interval):
         speeds = []
@@ -275,20 +271,20 @@ class MatchSegmenter:
 
     def _debug_plot_init(self, frame):
         if self.plotting == True:
-            #plt.ion()
+            plt.ion()
             hsv = np.zeros_like(frame)
             hsv[..., 1] = 255
             self.hsv = hsv
 
-            #_, ax = plt.subplots(2,1)
-            #self.ax = ax
+            _, ax = plt.subplots(2,1)
+            self.ax = ax
 
     def _debug_plot(self, axes, current_frame, flows_sums, flow, hsv):
         if self.plotting == True:
             axes[0].imshow(current_frame)
             axes[1].plot(flows_sums)
-            #plt.draw()
-            #plt.pause(0.001)
+            plt.draw()
+            plt.pause(0.001)
 
             # get vector magnitude and angle
             mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
