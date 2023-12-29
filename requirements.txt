@@ -11,10 +11,11 @@ gunicorn
 #ml
 # torch-cpu (for ultralytics)
 https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp311-cp311-linux_x86_64.whl
+https://download.pytorch.org/whl/torchvision-0.16.2-cp311-cp311-linux_aarch64.whl
 numpy==1.24.3
 opencv-python-headless
 matplotlib
-scipy
+scipy.signal
 # tensorflow-cpu
 ultralytics
 lapx
