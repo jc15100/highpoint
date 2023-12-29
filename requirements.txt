@@ -8,7 +8,7 @@ djangorestframework
 google-api-python-client
 
 #ml
-torch==2.0.1+cpu 
+https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp310-cp310-linux_x86_64.whl
 numpy==1.24.3
 opencv-python
 matplotlib
