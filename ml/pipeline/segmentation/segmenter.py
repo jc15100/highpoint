@@ -3,7 +3,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 import logging
-from scipy.signal import argrelmin, argrelmax
+#from scipy.signal import argrelmin
 from PIL import Image
 
 from ..core.yolo import YOLOStep
@@ -54,7 +54,7 @@ class MatchSegmenter:
                 flows = []
 
         if len(flows) > 0:
-            minima = argrelmin(flows, order=self.order)[0]
+            minima = []#argrelmin(flows, order=self.order)[0]
             print("Computed minima: " + str(minima))
 
             if not minima:
@@ -259,6 +259,9 @@ class MatchSegmenter:
         return (frame_segments, flows_sums)
     
     # MARK: Private methods
+
+    def _minima_numpy(self, data):
+        pass
 
     def _object_speed(self, positions, time_interval):
         speeds = []
