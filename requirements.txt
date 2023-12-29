@@ -13,7 +13,7 @@ numpy==1.24.3
 opencv-python
 matplotlib
 scipy
-tensorflow
+tensorflow-cpu
 ultralytics
 lapx
 openai
