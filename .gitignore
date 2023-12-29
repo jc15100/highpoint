@@ -1,3 +1,19 @@
 .DS_Store
 *.pyc
 web-app/media/
+
+__pycache__/
+
+# Ignore collected static and media files
+web-app/mediafiles/
+web-app/staticfiles/
+
+# Ignore the local DB
+db.sqlite3
+
+# Ignored by the build system
+/setup.cfg
+venv/
+
+# Ignore IDE files
+.idea/

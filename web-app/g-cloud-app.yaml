@@ -16,15 +16,23 @@
 
 # [START django_app]
 # [START gaestd_py_django_app_yaml]
-runtime: python39
-instance_class: F4_1G
+runtime: python311
+env: standard
 
 env_variables:
   # This setting is used in settings.py to configure your ALLOWED_HOSTS
   APPENGINE_URL: pivotal-valve-407719.ue.r.appspot.com
   openaikey: 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
 
+# This configures Google App Engine to serve the files in the app's static
+# directory.
 handlers:
+- url: /static
+  static_dir: static/
+
+# This handler routes all requests not caught above to your main app. It is
+# required when static routes are defined, but can be omitted (along with
+# the entire handlers section) when there are no static files defined.
 - url: /.*
   script: auto
 
