@@ -8,7 +8,7 @@ djangorestframework
 google-api-python-client
 
 #ml
-torch==2.0.1
+https://download.pytorch.org/whl/cpu/torch-2.0.1+cpu-cp311-cp311-linux_x86_64.whl
 numpy==1.24.3
 opencv-python
 matplotlib
@@ -16,5 +16,5 @@ scipy
 tensorflow
 ultralytics
 lapx
-#openai
-#pytube
+openai
+pytube
