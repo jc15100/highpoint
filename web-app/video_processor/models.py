@@ -23,7 +23,7 @@ class UserProfile(models.Model):
     plan = models.CharField(max_length=20, choices=PlanTypes.choices, default=PlanTypes.BASIC)
     
     number_of_uploads = models.IntegerField()
-    level = models.FloatField()
+    level = models.FloatField(default=1.0)
     players = models.IntegerField()
 
     smashes = models.ManyToManyField(Video)
