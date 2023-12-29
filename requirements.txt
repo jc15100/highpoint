@@ -10,7 +10,7 @@ google-api-python-client
 
 #ml
 torch==2.0.1
-numpy
+numpy==1.24.3
 opencv-python
 matplotlib
 scipy
