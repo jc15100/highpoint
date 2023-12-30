@@ -182,14 +182,15 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = 'staticfiles/'
 
-GS_BUCKET_NAME = 'pivotal-valve-407719.appspot.com'
-GS_BLOB_CHUNK_SIZE = 5*1024*256
 STORAGES = {
     "default": {
         "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+        "OPTIONS": {
+            'bucket_name': 'pivotal-valve-407719.appspot.com',
+            'blob_chunk_size': 5*1024*256,
+        }
     },
 }
-
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / 'media'
