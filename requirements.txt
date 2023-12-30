@@ -7,7 +7,8 @@ dj-stripe
 djangorestframework
 gunicorn
 google-api-python-client
-google-cloud-secret-manager 
+google-cloud-secret-manager
+django-storages[google]
 
 # ml
 # torch-cpu (for ultralytics)
