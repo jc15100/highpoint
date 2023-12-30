@@ -183,11 +183,10 @@ STATICFILES_DIRS = [
 STATIC_ROOT = 'staticfiles/'
 
 GS_BUCKET_NAME = 'pivotal-valve-407719.appspot.com'
+GS_BLOB_CHUNK_SIZE = 5*1024*256
 STORAGES = {
     "default": {
         "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
-        "OPTIONS": {
-        },
     },
 }
 
