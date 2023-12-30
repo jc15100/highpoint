@@ -57,7 +57,7 @@ if SECRET_KEY is None:
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Change this to "False" when you are ready for production
-DEBUG = True
+DEBUG = False
 
 APPENGINE_URL = env("APPENGINE_URL", default=None)
 if APPENGINE_URL:
@@ -187,13 +187,13 @@ STORAGES = {
         "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
         "OPTIONS": {
             'bucket_name': 'pivotal-valve-407719.appspot.com',
-            'blob_chunk_size': 5*1024*256,
+            'blob_chunk_size': 500*1024*256,
         }
     },
 }
 
-DATA_UPLOAD_MAX_MEMORY_SIZE = 5*1024*256
-FILE_UPLOAD_MAX_MEMORY_SIZE = 5*1024*256
+DATA_UPLOAD_MAX_MEMORY_SIZE = 500*1024*256
+FILE_UPLOAD_MAX_MEMORY_SIZE = 500*1024*256
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / 'media'
