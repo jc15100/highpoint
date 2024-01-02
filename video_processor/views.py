@@ -15,9 +15,12 @@ from .forms import UploadForm, DownloadLinkForm
 from .services.engine import Engine
 from .services.youtube_helper import YoutubeHelper
 
+from storages.backends.gcloud import GoogleCloudStorage
+
 # Global variables for services
 engine = Engine()
 youtube = YoutubeHelper()
+storage = GoogleCloudStorage()
 
 def upload_page(request):
     uploadForm = UploadForm(user_id=request.user.id)
@@ -89,6 +92,37 @@ def upload(request):
             update_user_profile(request, results)
 
             return JsonResponse({'success': True, 'results': results})
+        else:
+            print("Form not valid, skipping save")
+            return JsonResponse({'success': False, 'results': []})
+
+def upload_gcloud(request):
+    print("Trying to upload to gcloud")
+    if request.FILES:
+        form = UploadForm(request.POST, request.FILES)
+        print("Checking if form is valid? " + str(form.is_valid()))
+        if form.is_valid():
+            print("User " + str(request.user))
+
+            # add user to form
+            form.instance.user = request.user
+            video_url = form.instance.filesystem_url
+
+            print("Video path " + str(video_url))
+
+            try:
+                print("About to save")
+                path = storage.save("/media", video_url)
+                video_uri = storage.url(path)
+
+                print("Video available at " + str(video_uri))
+            except Exception as e:
+                print("Failed to upload to gcloud with error: " + str(e))
+
+            #results = engine.process(video_path, output_path)        
+            #update_user_profile(request, results)
+
+            return JsonResponse({'success': True, 'results': []})
         else:
             print("Form not valid, skipping save")
             return JsonResponse({'success': False, 'results': []})

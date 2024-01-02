@@ -16,6 +16,7 @@ from urllib.parse import urlparse
 from pathlib import Path
 import environ
 from google.cloud import secretmanager
+from google.oauth2 import service_account
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -57,7 +58,7 @@ if SECRET_KEY is None:
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Change this to "False" when you are ready for production
-DEBUG = False
+DEBUG = True
 
 APPENGINE_URL = env("APPENGINE_URL", default=None)
 if APPENGINE_URL:
@@ -126,11 +127,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "server.wsgi.application"
 
-
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {"default": env.db()}
+#DATABASES = {"default": env.db()}
 
 # If the flag as been set, configure to use proxy
 if os.getenv("USE_CLOUD_SQL_AUTH_PROXY", None):
@@ -138,13 +138,13 @@ if os.getenv("USE_CLOUD_SQL_AUTH_PROXY", None):
     DATABASES["default"]["PORT"] = 5432
 
 # Use a in-memory sqlite3 database when testing in CI systems
-if os.getenv("TRAMPOLINE_CI", None):
-    DATABASES = {
+#if os.getenv("TRAMPOLINE_CI", None):
+DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
         }
-    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -190,7 +190,25 @@ STORAGES = {
             'blob_chunk_size': 500*1024*256,
         }
     },
+    "staticfiles": {
+        "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+        "OPTIONS": {
+            'bucket_name': 'pivotal-valve-407719.appspot.com',
+            'blob_chunk_size': 500*1024*256,
+        }
+    },
 }
+
+# storage
+GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
+    os.path.join(BASE_DIR, 'pivotal-valve-407719-6b57d2500253.json')
+)
+
+print("GS Credentials loaded: " + str(GS_CREDENTIALS))
+
+GS_BUCKET_NAME = 'pivotal-valve-407719.appspot.com'
+GS_MAX_MEMORY_SIZE = 500*1024*256
+GS_BLOB_CHUNK_SIZE = 500*1024*256
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 500*1024*256
 FILE_UPLOAD_MAX_MEMORY_SIZE = 500*1024*256

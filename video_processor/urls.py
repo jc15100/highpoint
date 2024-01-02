@@ -9,8 +9,8 @@ from . import views
 urlpatterns = [
     path('', views.homepage, name='homepage'),
     path('user_content/', views.user_content, name='user_content'),
-    path('uploader', views.upload_page, name='upload_page'),
-    path('upload/', views.upload, name='upload'),
+    path('uploader', views.upload_page, name='uploader'),
+    path('upload/', views.upload_gcloud, name='upload'),
     path('download_link/', views.download_link, name='download_link'),
     path('signup/', views.signup, name='signup'),
     path('login/', djviews.LoginView.as_view(template_name='login.html'), name='login'),
