@@ -2,15 +2,21 @@ from django.db import models
 from django.contrib.auth.models import User
 from djstripe.models import Subscription
 
+def user_upload_path(instance, filename):
+    # Get the username of the user associated with the file
+    username = instance.user.username
+    # Concatenate the username with the filename to create the upload path
+    return f'uploads/{username}/{filename}'
+
 class Video(models.Model):
     class VideoTypes(models.TextChoices):
         RAW = 'raw', 'Raw'
         SMASH = 'smash', 'Smash'
         HIGHLIGHT = 'highlight', 'Highlight'
-    
-    filesystem_url = models.FileField(upload_to='uploads/%Y/%m/%d')
+
     web_url = models.URLField()
     user = models.ForeignKey(User,verbose_name='User', related_name="videoUser", on_delete=models.CASCADE)
+    filesystem_url = models.FileField(upload_to=user_upload_path)
     timestamp = models.DateTimeField(auto_now_add=True)
     type = models.CharField(max_length=10, choices=VideoTypes.choices, default=VideoTypes.RAW)
 

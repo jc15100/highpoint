@@ -56,7 +56,7 @@ class MatchSegmenter:
             minima = argrelmin(flows, order=self.order)[0]
             print("Computed minima: " + str(minima))
 
-            if not minima:
+            if len(minima) == 0:
                 print("No minima, setting to first")
                 minima = [flows[0]]
 
