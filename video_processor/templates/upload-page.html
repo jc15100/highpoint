@@ -201,24 +201,26 @@
                     const data = response.data
                     if (data['success']) {                    
                         console.log(data.results)
-                        
-                        if (data.results.supported) {
+                        results = JSON.parse(data.results)
+
+                        if (results.supported) {
                             // add group_highlights
-                            this.highlights.push(data.results.group_highlight)
+                            console.log("Highlight " + results.group_highlight)
+                            this.highlights.push(results.group_highlight)
                             
                             // add smashes
-                            this.smashes = this.smashes.concat(data.results.smashes)
-                            console.log(this.smashes)
+                            this.smashes = this.smashes.concat(results.smashes)
+                            console.log("Smashes " + this.smashes)
                             
                             // display player speeds
-                            player_speeds = JSON.parse(data.results.player_speeds)
-                            console.log(player_speeds)
+                            player_speeds = results.player_speeds
+                            console.log("Speeds " + player_speeds)
                             
                             const [datasets, labels] = this.processSpeeds(player_speeds)
                             const chartContext = document.getElementById("playerSpeedsChart").getContext("2d")
 
-                            this.player_frames = data.results.player_frames
-                            console.log(this.player_frames)
+                            this.player_frames = results.player_frames
+                            console.log("Frames " + this.player_frames)
                             
                             // populate chart
                             const chart = new Chart(chartContext, {
@@ -250,7 +252,7 @@
                             chart.update()
                             
                         } else {
-                            this.unsupported_input = !data.results.supported
+                            this.unsupported_input = !results.supported
                         }
                     } else {
                         console.log("Failed with response " + response)

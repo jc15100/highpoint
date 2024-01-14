@@ -6,6 +6,7 @@ import os
 from .core.video import Video
 from .segmentation.segmenter import MatchSegmenter
 from .gpt.openai_vision import OpenAIVisionProcessor
+from .result import HighpointResult
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -42,13 +43,13 @@ class RacquetSportsMLService:
 
         print("Video processing finished.")
 
-        return {
-            "smashes": smashes_videos_paths, 
-            "group_highlight": group_highlight_video_path,
-            "player_speeds": player_speeds,
-            "player_frames": player_frames,
-            "supported" : True
-        }
+        return HighpointResult(
+            smashes=smashes_videos_paths, 
+            group_highlight=group_highlight_video_path, 
+            player_frames=player_frames, 
+            player_speeds=player_speeds, 
+            supported=True
+        )
 
     def extract_smashes(self, video, gpt_vision: OpenAIVisionProcessor):
         print("Trying to extract smashes.")

@@ -1,14 +1,29 @@
-import sys
 import os
+import json
+import tempfile
+from datetime import datetime
+
+from django.contrib.auth import get_user_model
+from django.core.files.storage import default_storage, FileSystemStorage
+from django.core.files import File
+from django.core.files.base import ContentFile
+from django.conf import settings
 
 from ml.pipeline.service import RacquetSportsMLService
+from ml.pipeline.result import HighpointResult
+
+from ..models import Video, UserProfile
+
+local_storage = FileSystemStorage()
+local_storage.base_location = settings.MEDIA_ROOT
 
 class Engine:
     def __init__(self):
         self.ready = True
     
-    def process(self, video_path, output_path):
+    def process(self, video, output_path, request):
         service = RacquetSportsMLService()
+        video_path = self.save_video_locally(video)
 
         # first check it's a supported sport video
         supported = service.check_supported_sport(video_path)
@@ -16,10 +31,89 @@ class Engine:
         print("Supported sport? " + str(supported))
 
         if not supported:
-            results = {'supported': False}
+            result = {'supported': False}
         else:
             # results = service.run_processing(video_path, output_path)
-            results = {'smashes': ['/Users/juancarlosgarcia/Projects/highpoint/media/smash-433.mp4'], 'group_highlight': '/Users/juancarlosgarcia/Projects/highpoint/media/highlight-88.mp4', 'player_speeds': '{"1": [14.353446312598534, 10.235220283180563, 4.411978381020682, 23.799477280913056, 13.86634447238781, 19.95247501236099, 1.8072990955529988,2950.1304664573704, 2845.917662659606, 2837.8395743660635, 12.939969500104386, 53.10363702840738, 24.360579686922268, 46.34119413949392, 2574.9247700541646, 2507.9161256224243, 62.403483586116025, 152.22352701467233, 2234.07512897259, 23.964212967322897, 11.711265002335463, 15.003789554942736, 15.368503885907487, 13.389863393880745, 1748.8128250533643, 59.06992025308675, 69.44596588790237, 1569.2047210601897, 6.5], “2”: [2565.1064023866757]}', 'player_frames': ['/Users/juancarlosgarcia/Projects/highpoint/media/frame_0000.png', '/Users/juancarlosgarcia/Projects/highpoint/media/frame_0001.png', '/Users/juancarlosgarcia/Projects/highpoint/media/frame_0002.png', '/Users/juancarlosgarcia/Projects/highpoint/media/frame_0003.png', '/Users/juancarlosgarcia/Projects/highpoint/media/frame_0004.png'], 'supported': True}
-        return results
+            result = HighpointResult(smashes=['/Users/juancarlosgarcia/Projects/highpoint/media/smash-433.mp4'],
+                                     group_highlight='/Users/juancarlosgarcia/Projects/highpoint/media/highlight-88.mp4',
+                                     player_speeds={"1": [14.353446312598534, 10.235220283180563, 11.711265002335463], "2": [2565.1064023866757]},
+                                     player_frames=['/Users/juancarlosgarcia/Projects/highpoint/media/frame_0000.png', 
+                                                    '/Users/juancarlosgarcia/Projects/highpoint/media/frame_0001.png', 
+                                                    '/Users/juancarlosgarcia/Projects/highpoint/media/frame_0002.png', 
+                                                    '/Users/juancarlosgarcia/Projects/highpoint/media/frame_0003.png'],
+                                    supported=True)
+            result = self.store_results(request, result)
+        return json.dumps(result.__dict__)
+
+    def store_results(self, request, result):
+        print("Updating user profile in DB & results in storage for " + str(request.user))
+
+        smashes_urls = []
+        player_frames_urls = []
+
+        if result.supported == True:
+            User = get_user_model()
+            user_auth = User.objects.get(username=request.user) 
+            user = UserProfile.objects.get(user=user_auth)
+            user.number_of_uploads += 1
+
+            # TODO: redo formula for user level considering more than just smashes
+            user.level = round(((1 / len(user.smashes.all())) * 0.2) + user.level, 2)
+            user.players += 4
+
+            # Store media results in Google cloud: smashes, group highlight and player frames
+            # (1) smashes
+            for smash_file in result.smashes:
+                smash_url = self.save_video_remotely(request.user, smash_file)
+                smashes_urls.append(smash_url)
+                smash = Video.objects.create(type=Video.VideoTypes.SMASH, user=user_auth, web_url=smash_url)
+                user.smashes.add(smash)
+            
+            # (2) player frames
+            for frame_file in result.player_frames:
+                frame_url = self.save_video_remotely(request.user, frame_file)
+                player_frames_urls.append(frame_url)
+
+            # (3) highlight
+            highlight_file = result.group_highlight
+            highlight_url = self.save_video_remotely(request.user, highlight_file)
+            highlight = Video.objects.create(type=Video.VideoTypes.HIGHLIGHT, user=user_auth, web_url=highlight_url)
+            user.highlights.add(highlight)
+
+            user.save()
+            print("Profile, storage updated for " + str(request.user))
+
+            # return a new HighpointResult with urls pointing to Google Storage
+            return HighpointResult(
+                smashes=smashes_urls, 
+                group_highlight=highlight_url, 
+                player_speeds=result.player_speeds, 
+                player_frames=player_frames_urls, 
+                supported=True
+            )
+    
+    def save_video_remotely(self, user, video_path):
+        # temp_file is to avoid SuspiciousFileOperation while saving from file path
+        temp_file = tempfile.NamedTemporaryFile(dir='media')
+        video = open(video_path, 'rb')
+        temp_file.write(video.read())
+
+        # store in default_storage (GCloud)
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        storage_path = "results/" + str(user) + "/" + timestamp + "/" + os.path.basename(video_path)
         
+        print("Storing at " + str(storage_path))
+        path = default_storage.save(storage_path, File(temp_file))
+        return default_storage.url(path)
         
+    def save_video_locally(self, video):
+        # Download file to local filesystem & process it.
+        # If the file is not on local storage download it
+        print("Saving temp video locally")
+        filename = video.filesystem_url.name
+        if not local_storage.exists(filename):
+            filecontent = video.filesystem_url.read()
+            local_storage.save(filename, ContentFile(filecontent))
+                
+        local_file_path = local_storage.path(filename)
+        return local_file_path
