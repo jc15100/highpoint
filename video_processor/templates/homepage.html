@@ -55,8 +55,8 @@
         <h3 class="subtitle is-6">Your uploads</h3>
         <div class="box columns is-multiline has-text-centered">
             <div v-for="result in videos" class="column is-3" @contextmenu="rightClickVideo">
-                <video id="result-{{result.filesystem_url}}" class="video-js" controls preload="auto" width="320" height="132">
-                    <source :src="result.filesystem_url" type="video/mp4" />
+                <video id="result-{{result.web_url}}" class="video-js" controls preload="auto" width="320" height="132">
+                    <source :src="result.web_url" type="video/mp4" />
                     <p class="vjs-no-js">
                         To view this video please enable JavaScript, and consider upgrading to a
                         web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
@@ -68,8 +68,8 @@
         <h3 class="subtitle is-6">Your smashes</h3>
         <div class="box columns is-multiline has-text-centered">
             <div v-for="result in profile.smashes" class="column is-3">
-                <video id="result-{{result.filesystem_url}}" class="video-js" controls preload="auto" width="320" height="132">
-                    <source :src="result.filesystem_url" type="video/mp4" />
+                <video id="result-{{result.web_url}}" class="video-js" controls preload="auto" width="320" height="132">
+                    <source :src="result.web_url" type="video/mp4" />
                     <p class="vjs-no-js">
                         To view this video please enable JavaScript, and consider upgrading to a
                         web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
@@ -82,8 +82,8 @@
         <h3 class="subtitle is-6">Your highlights</h3>
         <div class="box columns is-multiline has-text-centered">
             <div v-for="result in profile.highlights" class="column is-3">
-                <video id="result-{{result.filesystem_url}}" class="video-js" controls preload="auto" width="320" height="132">
-                    <source :src="result.filesystem_url" type="video/mp4" />
+                <video id="result-{{result.web_url}}" class="video-js" controls preload="auto" width="320" height="132">
+                    <source :src="result.web_url" type="video/mp4" />
                     <p class="vjs-no-js">
                         To view this video please enable JavaScript, and consider upgrading to a
                         web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
@@ -117,7 +117,7 @@
                     
                     this.videos = response.data.videos
                     this.videos.forEach((result) => {
-                        console.log(result.filesystem_url)
+                        console.log(result.web_url)
                     })
                     this.profile = response.data.profile
                     console.log("No. of uploads " + this.profile.number_of_uploads)
@@ -125,12 +125,12 @@
                     
                     console.log("Smashes")
                     this.profile.smashes.forEach((result) => {
-                        console.log(result.filesystem_url)
+                        console.log(result.web_url)
                     })
                     
                     console.log("Highlights")
                     this.profile.highlights.forEach((result) => {
-                        console.log(result.filesystem_url)
+                        console.log(result.web_url)
                     })
                     
                     console.log("Players " + this.profile.players)
