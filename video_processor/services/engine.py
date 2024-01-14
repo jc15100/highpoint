@@ -43,6 +43,7 @@ class Engine:
                                                     '/Users/juancarlosgarcia/Projects/highpoint/media/frame_0003.png'],
                                     supported=True)
             result = self.store_results(request, result)
+            print(json.dumps(result.__dict__))
         return json.dumps(result.__dict__)
 
     def store_results(self, request, result):
@@ -50,6 +51,7 @@ class Engine:
 
         smashes_urls = []
         player_frames_urls = []
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
         if result.supported == True:
             User = get_user_model()
@@ -58,25 +60,25 @@ class Engine:
             user.number_of_uploads += 1
 
             # TODO: redo formula for user level considering more than just smashes
-            user.level = round(((1 / len(user.smashes.all())) * 0.2) + user.level, 2)
+            user.level = round(((1 / (len(user.smashes.all()) + 1)) * 0.2) + user.level, 2)
             user.players += 4
 
             # Store media results in Google cloud: smashes, group highlight and player frames
             # (1) smashes
             for smash_file in result.smashes:
-                smash_url = self.save_video_remotely(request.user, smash_file)
+                smash_url = self.save_video_remotely(request.user, smash_file, timestamp)
                 smashes_urls.append(smash_url)
                 smash = Video.objects.create(type=Video.VideoTypes.SMASH, user=user_auth, web_url=smash_url)
                 user.smashes.add(smash)
             
             # (2) player frames
             for frame_file in result.player_frames:
-                frame_url = self.save_video_remotely(request.user, frame_file)
+                frame_url = self.save_video_remotely(request.user, frame_file, timestamp)
                 player_frames_urls.append(frame_url)
 
             # (3) highlight
             highlight_file = result.group_highlight
-            highlight_url = self.save_video_remotely(request.user, highlight_file)
+            highlight_url = self.save_video_remotely(request.user, highlight_file, timestamp)
             highlight = Video.objects.create(type=Video.VideoTypes.HIGHLIGHT, user=user_auth, web_url=highlight_url)
             user.highlights.add(highlight)
 
@@ -92,14 +94,13 @@ class Engine:
                 supported=True
             )
     
-    def save_video_remotely(self, user, video_path):
+    def save_video_remotely(self, user, video_path, timestamp):
         # temp_file is to avoid SuspiciousFileOperation while saving from file path
         temp_file = tempfile.NamedTemporaryFile(dir='media')
         video = open(video_path, 'rb')
         temp_file.write(video.read())
 
         # store in default_storage (GCloud)
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         storage_path = "results/" + str(user) + "/" + timestamp + "/" + os.path.basename(video_path)
         
         print("Storing at " + str(storage_path))
