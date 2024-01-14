@@ -47,6 +47,16 @@
                     <div class="message-body">Apologies, but the video you've provided features a sport that is not supported.</div>
                 </article>
             </div>
+
+            <div class="box" v-show="trial_over">
+                <article class="message is-warning">
+                    <div class="message-header">
+                        <p>Trial Over</p>
+                        <button class="delete" aria-label="delete"></button>
+                    </div>
+                    <div class="message-body">Please subscribe to highpoint.ai to continue uploading your matches.</div>
+                </article>
+            </div>
             
             {% comment %} <div class="block is-centered is-small" v-if="videos.length">
                 <progress class="progress is-small mt-5" :value="progress" max="100"> [[ progress ]] </progress>
@@ -111,6 +121,7 @@
                     video_uploaded: false,
                     progress: 0,
                     unsupported_input: false,
+                    trial_over: false,
                     player_frames: []
                 }
             },
@@ -203,56 +214,61 @@
                         console.log(data.results)
                         results = JSON.parse(data.results)
 
-                        if (results.supported) {
-                            // add group_highlights
-                            console.log("Highlight " + results.group_highlight)
-                            this.highlights.push(results.group_highlight)
-                            
-                            // add smashes
-                            this.smashes = this.smashes.concat(results.smashes)
-                            console.log("Smashes " + this.smashes)
-                            
-                            // display player speeds
-                            player_speeds = results.player_speeds
-                            console.log("Speeds " + player_speeds)
-                            
-                            const [datasets, labels] = this.processSpeeds(player_speeds)
-                            const chartContext = document.getElementById("playerSpeedsChart").getContext("2d")
-
-                            this.player_frames = results.player_frames
-                            console.log("Frames " + this.player_frames)
-                            
-                            // populate chart
-                            const chart = new Chart(chartContext, {
-                                type: "line",
-                                data: {
-                                    labels: labels,
-                                    datasets: datasets,
-                                },
-                                options: {
-                                    maintainAspectRatio: false,
-                                    scales: {
-                                        y: {
-                                            display: false, // Set display to false to hide Y-axis values
-                                            beginAtZero: true
-                                        }
+                        if (results.trial_done) {
+                            this.trial_over = true
+                            console.log("Free trial done, please register for a subscription.")
+                        } else {
+                            if (results.supported) {
+                                // add group_highlights
+                                console.log("Highlight " + results.group_highlight)
+                                this.highlights.push(results.group_highlight)
+                                
+                                // add smashes
+                                this.smashes = this.smashes.concat(results.smashes)
+                                console.log("Smashes " + this.smashes)
+                                
+                                // display player speeds
+                                player_speeds = results.player_speeds
+                                console.log("Speeds " + player_speeds)
+                                
+                                const [datasets, labels] = this.processSpeeds(player_speeds)
+                                const chartContext = document.getElementById("playerSpeedsChart").getContext("2d")
+    
+                                this.player_frames = results.player_frames
+                                console.log("Frames " + this.player_frames)
+                                
+                                // populate chart
+                                const chart = new Chart(chartContext, {
+                                    type: "line",
+                                    data: {
+                                        labels: labels,
+                                        datasets: datasets,
                                     },
-                                    plugins: {
-                                        title: {
-                                            display: true,
-                                            text: 'Player Speeds',
-                                            font: {
-                                                size: 16,
-                                                weight: 'normal'
+                                    options: {
+                                        maintainAspectRatio: false,
+                                        scales: {
+                                            y: {
+                                                display: false, // Set display to false to hide Y-axis values
+                                                beginAtZero: true
+                                            }
+                                        },
+                                        plugins: {
+                                            title: {
+                                                display: true,
+                                                text: 'Player Speeds',
+                                                font: {
+                                                    size: 16,
+                                                    weight: 'normal'
+                                                }
                                             }
                                         }
                                     }
-                                }
-                            })
-                            chart.update()
-                            
-                        } else {
-                            this.unsupported_input = !results.supported
+                                })
+                                chart.update()
+                                
+                            } else {
+                                this.unsupported_input = !results.supported
+                            }
                         }
                     } else {
                         console.log("Failed with response " + response)

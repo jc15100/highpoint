@@ -25,7 +25,7 @@ class Engine:
         service = RacquetSportsMLService()
         video_path = self.save_video_locally(video)
 
-        # first check it's a supported sport video
+        # check it's a supported sport video
         supported = service.check_supported_sport(video_path)
 
         print("Supported sport? " + str(supported))

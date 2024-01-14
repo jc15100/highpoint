@@ -1,3 +1,5 @@
+import json
+
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.shortcuts import render, redirect
@@ -47,18 +49,25 @@ def download_link(request):
     if request.method == "POST":
         form = DownloadLinkForm(request.POST)
         if form.is_valid():
-            # add user to form & save video object in storage
-            form.instance.user = request.user
-            video = form.save()
-            print("Video saved to storage")
+            # check if user has reached free quota
+            user = get_user_profile(request)
+            if user.number_of_uploads > settings.FREE_QUOTA:
+                print("User has reached free quota, returning")
+                results = json.dumps({'trial_done': True})
+            else:
+                # add user to form & save video object in storage
+                form.instance.user = request.user
+                video = form.save()
+                print("Video saved to storage")
 
-            web_url = video.web_url
-            
-            output_path = str(settings.MEDIA_ROOT)
-            video_path = youtube.download_link(str(web_url), output_path)
-            
-            print("Results path " + str(output_path))
-            results = engine.process(video_path, output_path, request)
+                web_url = video.web_url
+                
+                output_path = str(settings.MEDIA_ROOT)
+                video_path = youtube.download_link(str(web_url), output_path)
+                
+                print("Results path " + str(output_path))
+                results = engine.process(video_path, output_path, request)
+
             return JsonResponse({'success': True, 'results': results})
         else:
             print("Form not valid, skipping save")
@@ -69,12 +78,19 @@ def upload(request):
         form = UploadForm(request.POST, request.FILES)
 
         if form.is_valid():
-            # add user to form & save video object in storage
-            form.instance.user = request.user
-            video = form.save()
-            print("Video saved to storage")
+            # check if user has reached free quota
+            user = get_user_profile(request)
+            if user.number_of_uploads > settings.FREE_QUOTA:
+                print("User has reached free quota, returning")
+                results = json.dumps({'trial_done': True})
+            else:
+                # add user to form & save video object in storage
+                form.instance.user = request.user
+                video = form.save()
+                print("Video saved to storage")
 
-            results = engine.process(video, str(settings.MEDIA_ROOT), request)
+                results = engine.process(video, str(settings.MEDIA_ROOT), request)
+
             return JsonResponse({'success': True, 'results': results})
         else:
             print("Form not valid, skipping save")
@@ -94,3 +110,9 @@ def signup(request):
         form = UserCreationForm()
     
     return render(request, 'signup.html', {'form': form})
+
+def get_user_profile(request):
+    User = get_user_model()
+    user_auth = User.objects.get(username=request.user) 
+    user_p = UserProfile.objects.get(user=user_auth)
+    return user_p
