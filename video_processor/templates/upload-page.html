@@ -58,9 +58,10 @@
                 </article>
             </div>
             
-            {% comment %} <div class="block is-centered is-small" v-if="videos.length">
-                <progress class="progress is-small mt-5" :value="progress" max="100"> [[ progress ]] </progress>
+            {% comment %} <div class="block is-centered is-small" v-show="videos.length">
+                <progress class="progress is-small mt-5 is-info" :value.prop="progress" max="100"> [[ progress ]] </progress>
             </div> {% endcomment %}
+
             <div class="box" v-show="smashes.length">
                 <div class="container">
                     <div class="columns is-centered">
@@ -141,6 +142,7 @@
                     this.performUpload(file, event => {
                         this.video_uploaded = true
                         this.progress = Math.round((100 * event.loaded)/event.total)
+                        console.log("Updating progress " + this.progress + " event " + JSON.stringify(event))
                     })
                     .then(response => {
                         this.processResults(response)
