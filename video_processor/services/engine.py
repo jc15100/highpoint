@@ -33,17 +33,20 @@ class Engine:
         if not supported:
             result = {'supported': False}
         else:
-            # results = service.run_processing(video_path, output_path)
-            result = HighpointResult(smashes=['/Users/juancarlosgarcia/Projects/highpoint/media/smash-433.mp4'],
-                                     group_highlight='/Users/juancarlosgarcia/Projects/highpoint/media/highlight-88.mp4',
-                                     player_speeds={"1": [14.353446312598534, 10.235220283180563, 11.711265002335463], "2": [2565.1064023866757]},
-                                     player_frames=['/Users/juancarlosgarcia/Projects/highpoint/media/frame_0000.png', 
-                                                    '/Users/juancarlosgarcia/Projects/highpoint/media/frame_0001.png', 
-                                                    '/Users/juancarlosgarcia/Projects/highpoint/media/frame_0002.png', 
-                                                    '/Users/juancarlosgarcia/Projects/highpoint/media/frame_0003.png'],
-                                    supported=True)
+            result = service.run_processing(video_path, output_path)
+
+            # result = HighpointResult(smashes=['/Users/juancarlosgarcia/Projects/highpoint/media/smash-433.mp4'],
+            #                          group_highlight='/Users/juancarlosgarcia/Projects/highpoint/media/highlight-88.mp4',
+            #                          player_speeds={"1": [14.353446312598534, 10.235220283180563, 11.711265002335463], "2": [2565.1064023866757]},
+            #                          player_frames=['/Users/juancarlosgarcia/Projects/highpoint/media/frame_0000.png', 
+            #                                         '/Users/juancarlosgarcia/Projects/highpoint/media/frame_0001.png', 
+            #                                         '/Users/juancarlosgarcia/Projects/highpoint/media/frame_0002.png', 
+            #                                         '/Users/juancarlosgarcia/Projects/highpoint/media/frame_0003.png'],
+            #                         supported=True)
+
             result = self.store_results(request, result)
             print(json.dumps(result.__dict__))
+
         return json.dumps(result.__dict__)
 
     def store_results(self, request, result):
@@ -110,7 +113,7 @@ class Engine:
     def save_video_locally(self, video):
         # Download file to local filesystem & process it.
         # If the file is not on local storage download it
-        print("Saving temp video locally")
+        print("Saving temp video locally " + str(video.filesystem_url))
         filename = video.filesystem_url.name
         if not local_storage.exists(filename):
             filecontent = video.filesystem_url.read()

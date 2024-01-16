@@ -58,17 +58,19 @@ def download_link(request):
                 # add user to form & save video object in storage
                 form.instance.user = request.user
                 video = form.save()
-                print("Video saved to storage")
+                print("Link saved to storage")
 
                 web_url = video.web_url
                 
+                # download Youtube video locally and add to video
                 output_path = str(settings.MEDIA_ROOT)
-                video_path = youtube.download_link(str(web_url), output_path)
-                
-                print("Results path " + str(output_path))
-                results = engine.process(video_path, output_path, request)
+                video.filesystem_url = youtube.download_link(str(web_url), output_path)
 
-            return JsonResponse({'success': True, 'results': results})
+                if video.filesystem_url is not None:
+                    results = engine.process(video, output_path, request)
+                    return JsonResponse({'success': True, 'results': results})
+                else:
+                    return JsonResponse({'success': False, 'results': json.dumps([])})
         else:
             print("Form not valid, skipping save")
             return JsonResponse({'success': False, 'results': []})

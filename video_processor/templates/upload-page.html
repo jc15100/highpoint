@@ -48,6 +48,16 @@
                 </article>
             </div>
 
+            <div class="box" v-show="error">
+                <article class="message is-danger">
+                    <div class="message-header">
+                        <p>Warning</p>
+                        <button class="delete" aria-label="delete"></button>
+                    </div>
+                    <div class="message-body">Apologies, but the video you've provided has an error.</div>
+                </article>
+            </div>
+
             <div class="box" v-show="trial_over">
                 <article class="message is-warning">
                     <div class="message-header">
@@ -123,7 +133,8 @@
                     progress: 0,
                     unsupported_input: false,
                     trial_over: false,
-                    player_frames: []
+                    player_frames: [],
+                    error: false
                 }
             },
             delimiters: ['[[', ']]'],
@@ -155,6 +166,7 @@
                                 video['status'] = 'failed'
                             }
                         })
+                        this.error = true
                     })
                 },
                 downloadLink() {
@@ -172,6 +184,7 @@
                                 video['status'] = 'failed'
                             }
                         })
+                        this.error = true
                     })
                 },
                 performUpload(file, onUploadProgress) {
@@ -212,6 +225,8 @@
                 },
                 processResults(response) {
                     const data = response.data
+                    this.error = true
+                    
                     if (data['success']) {                    
                         console.log(data.results)
                         results = JSON.parse(data.results)
@@ -273,7 +288,8 @@
                             }
                         }
                     } else {
-                        console.log("Failed with response " + response)
+                        console.log("Failed with response " + JSON.stringify(data))
+                        this.error = true
                     }
                 }
             },

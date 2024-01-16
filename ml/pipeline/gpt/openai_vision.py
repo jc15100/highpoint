@@ -44,16 +44,18 @@ class OpenAIVisionProcessor:
             frame = video.read_frame_every(skip_count)
 
             start_frames_ids = []
-            while frame is not None:
+            # only find 2 smashes to save on GPT costs
+            while frame is not None and len(start_frames_ids) < 2:
                 start_time = time.time()
                 result = self.process_frame_with_query(frame, query)
                 print("process() took %s seconds" % (time.time() - start_time))
-                print("Processed %s frame with result %s \n" % (skip_count, result))
+                print("Processed %s frame with result %s" % (skip_count, result))
                 
                 if result.__contains__("Yes"):
                     start_frames_ids.append(skip_count)
 
                 skip_count+= int(video.fps)
+                print("Reading frame…")
                 frame = video.read_frame_every(skip_count)
 
             print(start_frames_ids)
@@ -66,6 +68,7 @@ class OpenAIVisionProcessor:
         encoded_base64_string = base64.b64encode(buffer).decode('utf-8')
         image_base64 = f"data:image/jpeg;base64,{encoded_base64_string}"
 
+        print("Creating GPT message")
         response = self.client.chat.completions.create(
             model="gpt-4-vision-preview",
             messages=[
@@ -90,5 +93,6 @@ class OpenAIVisionProcessor:
         )
 
         result = response.choices[0].message.content
+        print("Received GPT response")
         return result
     
