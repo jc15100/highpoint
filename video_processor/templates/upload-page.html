@@ -5,14 +5,39 @@
     {% load static %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js"></script>
     <script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 </head>
 <body>
     <section class="is-mobile" id="app">
         <div class="container">
+            
+            <!-- Processing modal -->
+            <div class="modal" id="processingModal" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLongTitle">Processing match…</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        
+                        <div class="modal-body">
+                            <div class="block is-centered is-small">
+                                <progress class="progress is-small mt-5 is-info" :value.prop="progress" max="100"> [[ progress ]] </progress>
+                            </div>
+                        </div>
+                    </div>
+                </div>  
+            </div>
+            <!--End of processing modal-->
+            
             <div class="box">
                 <div class="block file is-link is-flex is-centered">
                     <label class="file-label">
-                        <input class="file-input" type="file" ref="file" @change="selectFile" multiple>
+                        <input class="file-input" type="file" ref="file" @change="selectFile" data-toggle="modal" data-target="#processingModal" multiple>
                         
                         <span class="file-cta">
                             <span class="file-icon">
@@ -47,7 +72,7 @@
                     <div class="message-body">Apologies, but the video you've provided features a sport that is not supported.</div>
                 </article>
             </div>
-
+            
             <div class="box" v-show="error">
                 <article class="message is-danger">
                     <div class="message-header">
@@ -57,7 +82,7 @@
                     <div class="message-body">Apologies, but the video you've provided has an error.</div>
                 </article>
             </div>
-
+            
             <div class="box" v-show="trial_over">
                 <article class="message is-warning">
                     <div class="message-header">
@@ -68,10 +93,6 @@
                 </article>
             </div>
             
-            {% comment %} <div class="block is-centered is-small" v-show="videos.length">
-                <progress class="progress is-small mt-5 is-info" :value.prop="progress" max="100"> [[ progress ]] </progress>
-            </div> {% endcomment %}
-
             <div class="box" v-show="smashes.length">
                 <div class="container">
                     <div class="columns is-centered">
@@ -149,7 +170,26 @@
                         })
                     })
                 },
+                async pollProgress() {
+                    try {
+                        // emulate a wait of 10 minutes every time (TODO)
+                        count = 10 * 60
+                        while ((this.progress < 1 || this.progress == undefined) && count > 0) {
+                            await this.sleep(1000); // Poll every second
+                            count -= 1
+                        }
+                        // close the modal
+                        this.progress = 100
+                        document.getElementById('close').click();
+                    } catch (error) {
+                        console.error('Error polling progress:', error);
+                    }
+                },
+                sleep(ms) {
+                    return new Promise(resolve => setTimeout(resolve, ms));
+                },
                 upload(file) {
+                    this.pollProgress()
                     this.performUpload(file, event => {
                         this.video_uploaded = true
                         this.progress = Math.round((100 * event.loaded)/event.total)
@@ -157,6 +197,8 @@
                     })
                     .then(response => {
                         this.processResults(response)
+                        // simulate work by setting undefined
+                        this.progress = undefined
                     })
                     .catch(error => {
                         console.log("Error " + error)
@@ -225,12 +267,12 @@
                 },
                 processResults(response) {
                     const data = response.data
-                    this.error = true
+                    this.error = false
                     
                     if (data['success']) {                    
                         console.log(data.results)
                         results = JSON.parse(data.results)
-
+                        
                         if (results.trial_done) {
                             this.trial_over = true
                             console.log("Free trial done, please register for a subscription.")
@@ -250,7 +292,7 @@
                                 
                                 const [datasets, labels] = this.processSpeeds(player_speeds)
                                 const chartContext = document.getElementById("playerSpeedsChart").getContext("2d")
-    
+                                
                                 this.player_frames = results.player_frames
                                 console.log("Frames " + this.player_frames)
                                 

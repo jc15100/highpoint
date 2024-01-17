@@ -78,7 +78,6 @@ def download_link(request):
 def upload(request):
     if request.FILES:
         form = UploadForm(request.POST, request.FILES)
-
         if form.is_valid():
             # check if user has reached free quota
             user = get_user_profile(request)
