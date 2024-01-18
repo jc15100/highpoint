@@ -96,6 +96,10 @@
 </body>
 {% else %}
 <body>
+    {% load static %}
+    <video autoplay muted loop id="landing">
+        <source src="{% static "video_processor/landing-video.mp4" %}" type="video/mp4">
+    </video>
 </body>
 {% endif %}
 
