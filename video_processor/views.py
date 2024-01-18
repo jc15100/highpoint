@@ -1,4 +1,5 @@
 import json
+import logging
 
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -12,6 +13,17 @@ from .serializers import VideoSerializer, UserProfileSerializer
 from .forms import UploadForm, DownloadLinkForm
 from .services.engine import Engine
 from .services.youtube_helper import YoutubeHelper
+
+import google.cloud.logging
+
+# Instantiates a client
+client = google.cloud.logging.Client()
+
+# Retrieves a Cloud Logging handler based on the environment
+# you're running in and integrates the handler with the
+# Python logging module. By default this captures all logs
+# at INFO level and higher
+client.setup_logging()
 
 # Global variables for services
 engine = Engine()
@@ -104,12 +116,12 @@ def signup(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-
+            logging.info("About to save UserProfile for " + str(user))
             try:
                 userprofile = UserProfile.objects.create(user=user)
                 userprofile.save()
             except Exception as e:
-                print("Failed to save user profile with exception " + str(e))
+                logging.error("Failed to save user profile with exception " + str(e)) 
             return redirect('homepage')
     else:
         form = UserCreationForm()
