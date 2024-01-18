@@ -104,9 +104,13 @@ def signup(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            userprofile = UserProfile.objects.create(user=user)
-            userprofile.save()
-            return redirect('frontpage')
+
+            try:
+                userprofile = UserProfile.objects.create(user=user)
+                userprofile.save()
+            except Exception as e:
+                print("Failed to save user profile with exception " + str(e))
+            return redirect('homepage')
     else:
         form = UserCreationForm()
     

@@ -28,9 +28,9 @@ class UserProfile(models.Model):
     user = models.ForeignKey(User,verbose_name='User', related_name="profileUser", on_delete=models.CASCADE)
     plan = models.CharField(max_length=20, choices=PlanTypes.choices, default=PlanTypes.BASIC)
     
-    number_of_uploads = models.IntegerField()
+    number_of_uploads = models.IntegerField(default=0)
     level = models.FloatField(default=1.0)
-    players = models.IntegerField()
+    players = models.IntegerField(default=0)
 
     smashes = models.ManyToManyField(Video)
     highlights = models.ManyToManyField(Video, related_name="highlights_videos")

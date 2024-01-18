@@ -35,6 +35,7 @@ class Engine:
         else:
             result = service.run_processing(video_path, output_path)
 
+            # For testing
             # result = HighpointResult(smashes=['/Users/juancarlosgarcia/Projects/highpoint/media/smash-433.mp4'],
             #                          group_highlight='/Users/juancarlosgarcia/Projects/highpoint/media/highlight-88.mp4',
             #                          player_speeds={"1": [14.353446312598534, 10.235220283180563, 11.711265002335463], "2": [2565.1064023866757]},
