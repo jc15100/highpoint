@@ -140,13 +140,13 @@ def _get_storage_client():
     return storage.Client.from_service_account_json(settings.CREDENTIALS_JSON)
 
 def _get_canonical_path(user, filename):
-    return "/" + settings.GS_BUCKET_NAME + "/media" + "/{}/".format(user) + name
+    return "/" + settings.GS_BUCKET_NAME + "/media" + "/{}/".format(user) + filename
 
 def get_signed_url(user, name, content_type):
     client = _get_storage_client()
     expiration = datetime.timedelta(minutes=15)
     canonical_resource = _get_canonical_path(user, name)
-    
+
     url = generate_signed_url_v4(
         client._credentials,
         resource=canonical_resource,
