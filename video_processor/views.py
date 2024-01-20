@@ -1,5 +1,6 @@
 import json
 import logging
+import datetime
 
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -8,22 +9,14 @@ from django.contrib.auth import login, get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.conf import settings
 
+from google.cloud import storage
+from google.cloud.storage._signing import generate_signed_url_v4
+
 from .models import Video, UserProfile
 from .serializers import VideoSerializer, UserProfileSerializer
 from .forms import UploadForm, DownloadLinkForm
 from .services.engine import Engine
 from .services.youtube_helper import YoutubeHelper
-
-import google.cloud.logging
-
-# Instantiates a client
-client = google.cloud.logging.Client()
-
-# Retrieves a Cloud Logging handler based on the environment
-# you're running in and integrates the handler with the
-# Python logging module. By default this captures all logs
-# at INFO level and higher
-client.setup_logging()
 
 # Global variables for services
 engine = Engine()
@@ -42,7 +35,7 @@ def user_content(request):
     if request.method == "GET":
         if request.user.is_authenticated == True:
             User = get_user_model()
-            print("Current user " + str(request.user))
+            print("Current user: " + str(request.user))
             videos = Video.objects.filter(user=User.objects.get(username=request.user), type=Video.VideoTypes.RAW)
             profile = UserProfile.objects.get(user=User.objects.get(username=request.user))
 
@@ -86,6 +79,15 @@ def download_link(request):
         else:
             print("Form not valid, skipping save")
             return JsonResponse({'success': False, 'results': []})
+
+def upload_url(request):
+    body = json.loads(request.body)
+    fileName = body['fileName']
+    fileType = body['fileType']
+
+    test_url = get_signed_url(request.user, fileName, fileType)
+    print("URL signed " + str(test_url))
+    return JsonResponse({'url': test_url})
 
 def upload(request):
     if request.FILES:
@@ -133,3 +135,24 @@ def get_user_profile(request):
     user_auth = User.objects.get(username=request.user) 
     user_p = UserProfile.objects.get(user=user_auth)
     return user_p
+
+def _get_storage_client():
+    return storage.Client.from_service_account_json(settings.CREDENTIALS_JSON)
+
+def _get_canonical_path(user, filename):
+    return "/" + settings.GS_BUCKET_NAME + "/media" + "/{}/".format(user) + name
+
+def get_signed_url(user, name, content_type):
+    client = _get_storage_client()
+    expiration = datetime.timedelta(minutes=15)
+    canonical_resource = _get_canonical_path(user, name)
+    
+    url = generate_signed_url_v4(
+        client._credentials,
+        resource=canonical_resource,
+        api_access_endpoint=settings.API_ACCESS_ENDPOINT,
+        expiration=expiration,
+        method="PUT",
+        content_type=content_type
+    )
+    return url

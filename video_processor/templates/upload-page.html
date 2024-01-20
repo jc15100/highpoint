@@ -190,7 +190,38 @@
                 },
                 upload(file) {
                     this.pollProgress()
-                    this.performUpload(file, event => {
+                    this.getUploadUrl(file)
+                    .then(response => {
+                        signed_url = response.data.url
+                        console.log("Received " + signed_url)
+                        this.performUpload(signed_url, file, event => {
+                            this.video_uploaded = true
+                            this.progress = Math.round((100 * event.loaded)/event.total)
+                            console.log("Updating progress " + this.progress + " event " + JSON.stringify(event))
+                        })
+                        .catch(error => {
+                            console.log("Error " + error)
+                            this.progress = 0
+                            this.videos.forEach(video => {
+                                if (video.name === file.name) {
+                                    video['status'] = 'failed'
+                                }
+                            })
+                            this.error = true
+                        })
+                    })
+                    .catch(error => {
+                        console.log("Error " + error)
+                        this.progress = 0
+                        this.videos.forEach(video => {
+                            if (video.name === file.name) {
+                                video['status'] = 'failed'
+                            }
+                        })
+                        this.error = true
+                    })
+
+                    /*this.performUpload(file, event => {
                         this.video_uploaded = true
                         this.progress = Math.round((100 * event.loaded)/event.total)
                         console.log("Updating progress " + this.progress + " event " + JSON.stringify(event))
@@ -209,7 +240,7 @@
                             }
                         })
                         this.error = true
-                    })
+                    })*/
                 },
                 downloadLink() {
                     this.performDownload(this.$refs.videoUrl.value, event => {
@@ -229,14 +260,24 @@
                         this.error = true
                     })
                 },
-                performUpload(file, onUploadProgress) {
-                    let formData = new FormData()
-                    formData.append('filesystem_url', file)
+                getUploadUrl(file) {
+                    console.log(file.name + " " + file.type)
+                    const body = {
+                        fileName: file.name,
+                        fileType: file.type
+                    };
                     
-                    return axios.post('/upload/', formData, {
+                    return axios.post('/upload_url/', body, {
                         headers: {
-                            "Content-Type": "multipart/form-data",
+                            "Content-Type": "application/json",
                             "X-CSRFToken": "{{ csrf_token }}"
+                        }
+                    })
+                },
+                performUpload(url, file, onUploadProgress) {
+                    return axios.put(url, file, {
+                        headers: {
+                            "Content-Type": "video/mp4",
                         },
                         onUploadProgress
                     })

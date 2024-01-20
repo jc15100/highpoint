@@ -9,6 +9,7 @@ gunicorn
 google-api-python-client
 google-cloud-secret-manager
 google-cloud-logging
+google-cloud-storage
 django-storages[google]
 
 # ml
@@ -16,6 +17,7 @@ django-storages[google]
 https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp311-cp311-linux_x86_64.whl
 # https://download.pytorch.org/whl/cpu/torchvision-0.15.0%2Bcpu-cp311-cp311-linux_x86_64.whl
 # tensorflow-cpu
+
 numpy
 opencv-python-headless
 matplotlib

@@ -11,6 +11,7 @@ urlpatterns = [
     path('user_content/', views.user_content, name='user_content'),
     path('uploader', views.upload_page, name='uploader'),
     path('upload/', views.upload, name='upload'),
+    path('upload_url/', views.upload_url, name='upload_url'),
     path('download_link/', views.download_link, name='download_link'),
     path('signup/', views.signup, name='signup'),
     path('login/', djviews.LoginView.as_view(template_name='login.html'), name='login'),

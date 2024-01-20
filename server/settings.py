@@ -18,6 +18,17 @@ import environ
 from google.cloud import secretmanager
 from google.oauth2 import service_account
 
+import google.cloud.logging
+
+# Instantiates a client
+client = google.cloud.logging.Client()
+
+# Retrieves a Cloud Logging handler based on the environment
+# you're running in and integrates the handler with the
+# Python logging module. By default this captures all logs
+# at INFO level and higher
+client.setup_logging()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -28,6 +39,10 @@ env = environ.Env(DEBUG=(bool, False))
 env_file = os.path.join(BASE_DIR, ".env")
 
 SECRET_KEY = None
+
+# SECURITY WARNING: don't run with debug turned on in production!
+# Change this to "False" when you are ready for production
+DEBUG = True
 
 if os.path.isfile(env_file):
     # Use a local secret file, if provided
@@ -55,10 +70,6 @@ else:
 
 if SECRET_KEY is None:
     SECRET_KEY = env("SECRET_KEY")
-
-# SECURITY WARNING: don't run with debug turned on in production!
-# Change this to "False" when you are ready for production
-DEBUG = False
 
 APPENGINE_URL = env("APPENGINE_URL", default=None)
 if APPENGINE_URL:
@@ -129,22 +140,22 @@ WSGI_APPLICATION = "server.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
-#DATABASES = {"default": env.db()}
+DATABASES = {}
 
 # If the flag as been set, configure to use proxy
 if os.getenv("USE_CLOUD_SQL_AUTH_PROXY", None):
     DATABASES["default"]["HOST"] = "127.0.0.1"
     DATABASES["default"]["PORT"] = 5432
-
 # Use a in-memory sqlite3 database when testing in CI systems
-#if os.getenv("TRAMPOLINE_CI", None):
-DATABASES = {
+elif os.getenv("TRAMPOLINE_CI", None) or DEBUG == True:
+    DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
         }
-}
+    }
+else:
+    DATABASES = {"default": env.db()}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -200,22 +211,24 @@ STORAGES = {
     },
 }
 
+MEDIA_URL = "https://storage.googleapis.com/{GS_BUCKET_NAME}/"
+MEDIA_ROOT = 'media/'
+
 # storage
 GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
     os.path.join(BASE_DIR, 'pivotal-valve-407719-6b57d2500253.json')
 )
+CREDENTIALS_JSON = os.path.join(BASE_DIR, 'pivotal-valve-407719-6b57d2500253.json')
 
 print("GS Credentials loaded: " + str(GS_CREDENTIALS))
 
+API_ACCESS_ENDPOINT = 'https://storage.googleapis.com'
 GS_BUCKET_NAME = 'pivotal-valve-407719.appspot.com'
-GS_MAX_MEMORY_SIZE = 500*1024*256
-GS_BLOB_CHUNK_SIZE = 500*1024*256
+GS_MAX_MEMORY_SIZE = 5000*1024*256
+GS_BLOB_CHUNK_SIZE = 5000*1024*256
 
-DATA_UPLOAD_MAX_MEMORY_SIZE = 500*1024*256
-FILE_UPLOAD_MAX_MEMORY_SIZE = 500*1024*256
-
-MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / 'media'
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5000*1024*256
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5000*1024*256
 
 # Login/Logout URLs
 LOGIN_REDIRECT_URL = '/uploader'
@@ -226,4 +239,4 @@ LOGOUT_REDIRECT_URL = '/'
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-FREE_QUOTA = 5
+FREE_QUOTA = 50
