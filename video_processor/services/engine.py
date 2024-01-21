@@ -21,9 +21,8 @@ class Engine:
     def __init__(self):
         self.ready = True
     
-    def process(self, video, output_path, request):
+    def process(self, video_path, output_path, request):
         service = RacquetSportsMLService()
-        video_path = self.save_video_locally(video)
 
         # check it's a supported sport video
         supported = service.check_supported_sport(video_path)
@@ -48,7 +47,7 @@ class Engine:
             result = self.store_results(request, result)
             print(json.dumps(result.__dict__))
 
-        return json.dumps(result.__dict__)
+        return result.__dict__
 
     def store_results(self, request, result):
         print("Updating user profile in DB & results in storage for " + str(request.user))

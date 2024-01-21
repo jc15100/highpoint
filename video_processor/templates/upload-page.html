@@ -170,45 +170,26 @@
                         })
                     })
                 },
-                async pollProgress() {
-                    try {
-                        // emulate a wait of 10 minutes every time (TODO)
-                        count = 10 * 60
-                        while ((this.progress < 1 || this.progress == undefined) && count > 0) {
-                            await this.sleep(1000); // Poll every second
-                            count -= 1
-                        }
-                        // close the modal
-                        this.progress = 100
-                        document.getElementById('close').click();
-                    } catch (error) {
-                        console.error('Error polling progress:', error);
-                    }
-                },
-                sleep(ms) {
-                    return new Promise(resolve => setTimeout(resolve, ms));
-                },
                 upload(file) {
-                    this.pollProgress()
                     this.getUploadUrl(file)
                     .then(response => {
                         signed_url = response.data.url
-                        console.log("Received " + signed_url)
-                        this.performUpload(signed_url, file, event => {
+                        console.log("(signed) URL for upload: " + signed_url)
+
+                        return signed_url
+                    })
+                    .then(signed_url => {
+                        return this.performUpload(signed_url, file, event => {
                             this.video_uploaded = true
                             this.progress = Math.round((100 * event.loaded)/event.total)
                             console.log("Updating progress " + this.progress + " event " + JSON.stringify(event))
                         })
-                        .catch(error => {
-                            console.log("Error " + error)
-                            this.progress = 0
-                            this.videos.forEach(video => {
-                                if (video.name === file.name) {
-                                    video['status'] = 'failed'
-                                }
-                            })
-                            this.error = true
-                        })
+                    })
+                    .then(uploaded_url => {
+                        return this.process(file)
+                    })
+                    .then(results => {
+                        this.handleResults(results)
                     })
                     .catch(error => {
                         console.log("Error " + error)
@@ -220,38 +201,18 @@
                         })
                         this.error = true
                     })
-
-                    /*this.performUpload(file, event => {
-                        this.video_uploaded = true
-                        this.progress = Math.round((100 * event.loaded)/event.total)
-                        console.log("Updating progress " + this.progress + " event " + JSON.stringify(event))
-                    })
-                    .then(response => {
-                        this.processResults(response)
-                        // simulate work by setting undefined
-                        this.progress = undefined
-                    })
-                    .catch(error => {
-                        console.log("Error " + error)
-                        this.progress = 0
-                        this.videos.forEach(video => {
-                            if (video.name === file.name) {
-                                video['status'] = 'failed'
-                            }
-                        })
-                        this.error = true
-                    })*/
                 },
                 downloadLink() {
                     this.performDownload(this.$refs.videoUrl.value, event => {
                         this.progress = Math.round((100 * event.loaded)/event.total)
                     })
                     .then(response => {
-                        this.processResults(response)
+                        this.handleResults(response)
                     })
                     .catch(error => {
                         console.log("Error " + error)
                         this.progress = 0
+                        this.closeUploader()
                         this.videos.forEach(video => {
                             if (video.name === file.name) {
                                 video['status'] = 'failed'
@@ -282,6 +243,21 @@
                         onUploadProgress
                     })
                 },
+                process(file) {
+                    const body = {
+                        fileName: file.name
+                    };
+
+                    return axios.post("/process/", body, {
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token }}"
+                        }
+                    })
+                },
+                closeUploader() {
+                    document.getElementById('close').click()
+                },
                 performDownload(url, onUploadProgress) {
                     let formData = new FormData()
                     formData.append('web_url', url)
@@ -294,7 +270,7 @@
                         onUploadProgress
                     })
                 },
-                processSpeeds(speeds) { 
+                handleSpeeds(speeds) { 
                     datasets = []
                     Object.entries(speeds).forEach(([playerId, playerSpeeds]) => {
                         datasets.push({
@@ -302,17 +278,18 @@
                             data: playerSpeeds
                         })
                     })
+                
                     const [[firstPlayerId, firstPlayerSpeeds]] = Object.entries(speeds);
                     labels = firstPlayerSpeeds.map((element, index) => index)
                     return [datasets, labels]
                 },
-                processResults(response) {
+                handleResults(response) {
                     const data = response.data
                     this.error = false
                     
                     if (data['success']) {                    
                         console.log(data.results)
-                        results = JSON.parse(data.results)
+                        results = data.results
                         
                         if (results.trial_done) {
                             this.trial_over = true
@@ -328,10 +305,10 @@
                                 console.log("Smashes " + this.smashes)
                                 
                                 // display player speeds
-                                player_speeds = results.player_speeds
-                                console.log("Speeds " + player_speeds)
+                                player_speeds = JSON.parse(results.player_speeds)
+                                console.log("Speed count: " + Object.keys(player_speeds).length)
                                 
-                                const [datasets, labels] = this.processSpeeds(player_speeds)
+                                const [datasets, labels] = this.handleSpeeds(player_speeds)
                                 const chartContext = document.getElementById("playerSpeedsChart").getContext("2d")
                                 
                                 this.player_frames = results.player_frames
@@ -365,9 +342,10 @@
                                     }
                                 })
                                 chart.update()
-                                
+                                this.closeUploader()
                             } else {
                                 this.unsupported_input = !results.supported
+                                this.closeUploader()
                             }
                         }
                     } else {

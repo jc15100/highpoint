@@ -81,13 +81,18 @@ def download_link(request):
             return JsonResponse({'success': False, 'results': []})
 
 def upload_url(request):
-    body = json.loads(request.body)
-    fileName = body['fileName']
-    fileType = body['fileType']
+    user = get_user_profile(request)
+    if user.number_of_uploads > settings.FREE_QUOTA:
+        print("User has reached free quota, returning")
+        return JsonResponse(json.dumps({'trial_done': True}))
+    else:
+        body = json.loads(request.body)
+        fileName = body['fileName']
+        fileType = body['fileType']
 
-    test_url = get_signed_url(request.user, fileName, fileType)
-    print("URL signed " + str(test_url))
-    return JsonResponse({'url': test_url})
+        test_url = get_signed_url(request.user, fileName, fileType)
+        print("URL signed " + str(test_url))
+        return JsonResponse({'url': test_url})
 
 def upload(request):
     if request.FILES:
@@ -110,6 +115,18 @@ def upload(request):
         else:
             print("Form not valid, skipping save")
             return JsonResponse({'success': False, 'results': []})
+
+def process(request):
+    body = json.loads(request.body)
+    fileName = body['fileName']
+
+    blob_path = _get_bucket_path(request.user, fileName)
+    local_path = _get_local_copy(request.user, blob_path)
+
+    print("Local path: " + str(local_path))
+
+    results = engine.process(local_path, str(settings.MEDIA_ROOT), request)
+    return JsonResponse({'success': True, 'results': results})
 
 def signup(request):
     if request.method == 'POST':
@@ -140,7 +157,20 @@ def _get_storage_client():
     return storage.Client.from_service_account_json(settings.CREDENTIALS_JSON)
 
 def _get_canonical_path(user, filename):
-    return "/" + settings.GS_BUCKET_NAME + "/media" + "/{}/".format(user) + filename
+    return "/" + settings.GS_BUCKET_NAME + "/" + _get_bucket_path(user, filename)
+
+def _get_bucket_path(user, filename):
+    return "media" + "/{}/".format(user) + filename
+
+def _get_local_copy(user, blob_path):
+    client = _get_storage_client()
+    bucket_name = settings.GS_BUCKET_NAME
+    bucket = client.get_bucket(bucket_name)
+    video_blob = bucket.blob(blob_path)
+
+    local_video_path = str(settings.MEDIA_ROOT) + "/{}_local_video.mp4".format(str(user))
+    video_blob.download_to_filename(local_video_path)
+    return local_video_path
 
 def get_signed_url(user, name, content_type):
     client = _get_storage_client()

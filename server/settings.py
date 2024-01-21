@@ -187,13 +187,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = "static/"
-STATICFILES_DIRS = [
-      os.path.join(BASE_DIR, "static"), 
-]
-
-#STATIC_ROOT = 'staticfiles/'
-
+# Works for Django > 4.0
 STORAGES = {
     "default": {
         "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
@@ -211,8 +205,12 @@ STORAGES = {
     },
 }
 
-MEDIA_URL = "https://storage.googleapis.com/{GS_BUCKET_NAME}/"
-MEDIA_ROOT = 'media/'
+# Needed for Django < 4.0
+DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+STATICFILES_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # storage
 GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
@@ -226,6 +224,14 @@ API_ACCESS_ENDPOINT = 'https://storage.googleapis.com'
 GS_BUCKET_NAME = 'pivotal-valve-407719.appspot.com'
 GS_MAX_MEMORY_SIZE = 5000*1024*256
 GS_BLOB_CHUNK_SIZE = 5000*1024*256
+
+STATIC_URL = 'https://storage.googleapis.com/{}/'.format(GS_BUCKET_NAME)
+
+STATICFILES_DIRS = [
+      os.path.join(BASE_DIR, "static"), 
+]
+
+#STATIC_ROOT = "staticfiles"
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5000*1024*256
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5000*1024*256
