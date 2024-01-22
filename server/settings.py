@@ -42,7 +42,7 @@ SECRET_KEY = None
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Change this to "False" when you are ready for production
-DEBUG = True
+DEBUG = False
 
 if os.path.isfile(env_file):
     # Use a local secret file, if provided
@@ -205,9 +205,10 @@ STORAGES = {
     },
 }
 
-# Needed for Django < 4.0
-DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
-STATICFILES_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+# Needed for Django < 4.0, local environment
+if DEBUG == True:
+    DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+    STATICFILES_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / 'media'
