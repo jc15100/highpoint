@@ -31,7 +31,7 @@
                     <button class="button is-small is-fullwidth is-white is-clickable" type="submit">Log out {{request.user}}</button>
                   </form>
                 {% else %}
-                <a href="{% url 'signup' %}" class="navbar-item"><strong>Sign up</strong></a>
+                <a href="{% url 'signup' %}" class="navbar-item">Sign up</a>
                 <a href="{% url 'login' %}" class="navbar-item">Log in</a>
                 {% endif %}
             </div>

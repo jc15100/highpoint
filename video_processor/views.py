@@ -37,6 +37,8 @@ def user_content(request):
             videos = Video.objects.filter(user=User.objects.get(username=request.user), type=Video.VideoTypes.RAW)
             profile = UserProfile.objects.get(user=User.objects.get(username=request.user))
 
+            _renew_user_content(videos, profile)
+
             video_serializer = VideoSerializer(videos, many=True)
             serialized_videos = video_serializer.data
 
@@ -145,3 +147,20 @@ def _get_user_profile(request):
     user_auth = User.objects.get(username=request.user) 
     user_p = UserProfile.objects.get(user=user_auth)
     return user_p
+
+def _renew_user_content(videos: [Video], profile: UserProfile):
+    print("Renewing ({}) Raw Videos".format(len(videos)))
+
+    for video in videos:
+        url = storage_helper.get_signed_url(str(video.filesystem_url), "GET")
+        video.web_url = url
+    
+    print("Renewing ({}) Smash Videos".format(len(profile.smashes.all())))
+    for smash in profile.smashes.all():
+        smash_url = storage_helper.get_signed_url(str(smash.filesystem_url), "GET")
+        smash.web_url = smash_url
+    
+    print("Renewing ({}) Highlight Videos".format(len(profile.highlights.all())))
+    for highlight in profile.highlights.all():
+        highlight_url = storage_helper.get_signed_url(str(highlight.filesystem_url), "GET")
+        highlight.web_url = highlight_url

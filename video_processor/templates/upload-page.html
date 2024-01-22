@@ -50,7 +50,7 @@
                     </label>
                 </div>
                 
-                <div class="columns is-centered">
+                {% comment %} <div class="columns is-centered">
                     <div class="control has-icons-left has-icons-right">
                         <input class="input is-small" type="url" ref="videoUrl" placeholder="or add a link to Youtube" @keyup.enter="downloadLink">
                         <span class="icon is-small is-left">
@@ -60,7 +60,7 @@
                             <i class="fas fa-check"></i>
                         </span>
                     </div>
-                </div>
+                </div> {% endcomment %}
             </div>
             
             <div class="box" v-show="unsupported_input">
