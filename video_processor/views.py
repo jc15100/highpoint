@@ -17,6 +17,7 @@ from .serializers import VideoSerializer, UserProfileSerializer
 from .forms import UploadForm, DownloadLinkForm
 from .services.engine import Engine
 from .services.youtube_helper import YoutubeHelper
+from ml.pipeline.result import HighpointResult
 
 # Global variables for services
 engine = Engine()
@@ -55,7 +56,7 @@ def download_link(request):
         form = DownloadLinkForm(request.POST)
         if form.is_valid():
             # check if user has reached free quota
-            user = get_user_profile(request)
+            user = _get_user_profile(request)
             if user.number_of_uploads > settings.FREE_QUOTA:
                 print("User has reached free quota, returning")
                 results = json.dumps({'trial_done': True})
@@ -81,7 +82,7 @@ def download_link(request):
             return JsonResponse({'success': False, 'results': []})
 
 def upload_url(request):
-    user = get_user_profile(request)
+    user = _get_user_profile(request)
     if user.number_of_uploads > settings.FREE_QUOTA:
         print("User has reached free quota, returning")
         return JsonResponse(json.dumps({'trial_done': True}))
@@ -89,8 +90,9 @@ def upload_url(request):
         body = json.loads(request.body)
         fileName = body['fileName']
         fileType = body['fileType']
+        storage_bucket = _get_storage_bucket_path(request.user, fileName)
 
-        test_url = get_signed_url(request.user, fileName, fileType)
+        test_url = _get_signed_url_for_upload(storage_bucket, fileType, "PUT")
         print("URL signed " + str(test_url))
         return JsonResponse({'url': test_url})
 
@@ -99,7 +101,7 @@ def upload(request):
         form = UploadForm(request.POST, request.FILES)
         if form.is_valid():
             # check if user has reached free quota
-            user = get_user_profile(request)
+            user = _get_user_profile(request)
             if user.number_of_uploads > settings.FREE_QUOTA:
                 print("User has reached free quota, returning")
                 results = json.dumps({'trial_done': True})
@@ -120,13 +122,15 @@ def process(request):
     body = json.loads(request.body)
     fileName = body['fileName']
 
-    blob_path = _get_bucket_path(request.user, fileName)
+    blob_path = _get_storage_bucket_path(request.user, fileName)
     local_path = _get_local_copy(request.user, blob_path)
 
     print("Local path: " + str(local_path))
 
-    results = engine.process(local_path, str(settings.MEDIA_ROOT), request)
-    return JsonResponse({'success': True, 'results': results})
+    result = engine.process(local_path, str(settings.MEDIA_ROOT), request)
+    result = _hydrate_results(request, result=result)
+
+    return JsonResponse({'success': True, 'results': result})
 
 def signup(request):
     if request.method == 'POST':
@@ -147,7 +151,13 @@ def signup(request):
     
     return render(request, 'signup.html', {'form': form})
 
-def get_user_profile(request):
+# MARK: Private methods
+
+def _hydrate_results(request, result: HighpointResult):
+    result.group_highlight = _get_signed_url(result.group_highlight, "GET")
+    return result.__dict__
+
+def _get_user_profile(request):
     User = get_user_model()
     user_auth = User.objects.get(username=request.user) 
     user_p = UserProfile.objects.get(user=user_auth)
@@ -156,11 +166,14 @@ def get_user_profile(request):
 def _get_storage_client():
     return storage.Client.from_service_account_json(settings.CREDENTIALS_JSON)
 
-def _get_canonical_path(user, filename):
-    return "/" + settings.GS_BUCKET_NAME + "/" + _get_bucket_path(user, filename)
+def _get_canonical_path(sub_bucket):
+    return "/" + settings.GS_BUCKET_NAME + "/" + sub_bucket
 
-def _get_bucket_path(user, filename):
+def _get_storage_bucket_path(user, filename):
     return "media" + "/{}/".format(user) + filename
+
+def _get_results_bucket_path(user, filename):
+    return "results" + "/{}/".format(user) + filename
 
 def _get_local_copy(user, blob_path):
     client = _get_storage_client()
@@ -172,17 +185,35 @@ def _get_local_copy(user, blob_path):
     video_blob.download_to_filename(local_video_path)
     return local_video_path
 
-def get_signed_url(user, name, content_type):
+def _get_signed_url_for_upload(sub_bucket, content_type, method):
     client = _get_storage_client()
     expiration = datetime.timedelta(minutes=15)
-    canonical_resource = _get_canonical_path(user, name)
+    canonical_resource = _get_canonical_path(sub_bucket)
 
     url = generate_signed_url_v4(
         client._credentials,
         resource=canonical_resource,
         api_access_endpoint=settings.API_ACCESS_ENDPOINT,
         expiration=expiration,
-        method="PUT",
+        method=method,
         content_type=content_type
     )
+
+    print("generated signed url " + str(url))
+    return url
+
+def _get_signed_url(sub_bucket, method):
+    client = _get_storage_client()
+    expiration = datetime.timedelta(minutes=15)
+    canonical_resource = _get_canonical_path(sub_bucket)
+
+    url = generate_signed_url_v4(
+        client._credentials,
+        resource=canonical_resource,
+        api_access_endpoint=settings.API_ACCESS_ENDPOINT,
+        expiration=expiration,
+        method=method
+    )
+
+    print("generated signed url " + str(url))
     return url

@@ -92,7 +92,7 @@
                     <div class="message-body">Please subscribe to highpoint.ai to continue uploading your matches.</div>
                 </article>
             </div>
-            
+
             <div class="box" v-show="smashes.length">
                 <div class="container">
                     <div class="columns is-centered">
@@ -145,6 +145,8 @@
         const { createApp } = Vue
         
         createApp({
+            mounted() {
+            },
             data() {
                 return {
                     videos: [],

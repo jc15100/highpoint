@@ -47,7 +47,7 @@ class Engine:
             result = self.store_results(request, result)
             print(json.dumps(result.__dict__))
 
-        return result.__dict__
+        return result
 
     def store_results(self, request, result):
         print("Updating user profile in DB & results in storage for " + str(request.user))
@@ -108,7 +108,8 @@ class Engine:
         
         print("Storing at " + str(storage_path))
         path = default_storage.save(storage_path, File(temp_file))
-        return default_storage.url(path)
+        #return default_storage.url(path)
+        return str(storage_path)
         
     def save_video_locally(self, video):
         # Download file to local filesystem & process it.
