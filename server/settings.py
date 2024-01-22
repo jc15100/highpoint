@@ -245,4 +245,4 @@ LOGOUT_REDIRECT_URL = '/'
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-FREE_QUOTA = 50
+FREE_QUOTA = 100

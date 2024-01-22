@@ -92,7 +92,7 @@
                     <div class="message-body">Please subscribe to highpoint.ai to continue uploading your matches.</div>
                 </article>
             </div>
-
+            
             <div class="box" v-show="smashes.length">
                 <div class="container">
                     <div class="columns is-centered">
@@ -175,10 +175,15 @@
                 upload(file) {
                     this.getUploadUrl(file)
                     .then(response => {
-                        signed_url = response.data.url
-                        console.log("(signed) URL for upload: " + signed_url)
-
-                        return signed_url
+                        if (response.data.trial_done) {
+                            this.trial_over = true
+                            console.log("Free trial done, please register for a subscription.")
+                            return null
+                        } else { 
+                            signed_url = response.data.url
+                            console.log("(signed) URL for upload: " + signed_url)
+                            return signed_url
+                        }
                     })
                     .then(signed_url => {
                         return this.performUpload(signed_url, file, event => {
@@ -194,14 +199,16 @@
                         this.handleResults(results)
                     })
                     .catch(error => {
-                        console.log("Error " + error)
-                        this.progress = 0
-                        this.videos.forEach(video => {
-                            if (video.name === file.name) {
-                                video['status'] = 'failed'
-                            }
-                        })
-                        this.error = true
+                        if (this.trial_over == false) {
+                            console.log("Error " + error)
+                            this.progress = 0
+                            this.videos.forEach(video => {
+                                if (video.name === file.name) {
+                                    video['status'] = 'failed'
+                                }
+                            })
+                            this.error = true
+                        }
                     })
                 },
                 downloadLink() {
@@ -249,7 +256,7 @@
                     const body = {
                         fileName: file.name
                     };
-
+                    
                     return axios.post("/process/", body, {
                         headers: {
                             "Content-Type": "application/json",
@@ -280,7 +287,7 @@
                             data: playerSpeeds
                         })
                     })
-                
+                    
                     const [[firstPlayerId, firstPlayerSpeeds]] = Object.entries(speeds);
                     labels = firstPlayerSpeeds.map((element, index) => index)
                     return [datasets, labels]
@@ -293,62 +300,57 @@
                         console.log(data.results)
                         results = data.results
                         
-                        if (results.trial_done) {
-                            this.trial_over = true
-                            console.log("Free trial done, please register for a subscription.")
-                        } else {
-                            if (results.supported) {
-                                // add group_highlights
-                                console.log("Highlight " + results.group_highlight)
-                                this.highlights.push(results.group_highlight)
-                                
-                                // add smashes
-                                this.smashes = this.smashes.concat(results.smashes)
-                                console.log("Smashes " + this.smashes)
-                                
-                                // display player speeds
-                                player_speeds = JSON.parse(results.player_speeds)
-                                console.log("Speed count: " + Object.keys(player_speeds).length)
-                                
-                                const [datasets, labels] = this.handleSpeeds(player_speeds)
-                                const chartContext = document.getElementById("playerSpeedsChart").getContext("2d")
-                                
-                                this.player_frames = results.player_frames
-                                console.log("Frames " + this.player_frames)
-                                
-                                // populate chart
-                                const chart = new Chart(chartContext, {
-                                    type: "line",
-                                    data: {
-                                        labels: labels,
-                                        datasets: datasets,
+                        if (results.supported) {
+                            // add group_highlights
+                            console.log("Highlight " + results.group_highlight)
+                            this.highlights.push(results.group_highlight)
+                            
+                            // add smashes
+                            this.smashes = this.smashes.concat(results.smashes)
+                            console.log("Smashes " + this.smashes)
+                            
+                            // display player speeds
+                            player_speeds = JSON.parse(results.player_speeds)
+                            console.log("Speed count: " + Object.keys(player_speeds).length)
+                            
+                            const [datasets, labels] = this.handleSpeeds(player_speeds)
+                            const chartContext = document.getElementById("playerSpeedsChart").getContext("2d")
+                            
+                            this.player_frames = results.player_frames
+                            console.log("Frames " + this.player_frames)
+                            
+                            // populate chart
+                            const chart = new Chart(chartContext, {
+                                type: "line",
+                                data: {
+                                    labels: labels,
+                                    datasets: datasets,
+                                },
+                                options: {
+                                    maintainAspectRatio: false,
+                                    scales: {
+                                        y: {
+                                            display: false, // Set display to false to hide Y-axis values
+                                            beginAtZero: true
+                                        }
                                     },
-                                    options: {
-                                        maintainAspectRatio: false,
-                                        scales: {
-                                            y: {
-                                                display: false, // Set display to false to hide Y-axis values
-                                                beginAtZero: true
-                                            }
-                                        },
-                                        plugins: {
-                                            title: {
-                                                display: true,
-                                                text: 'Player Speeds',
-                                                font: {
-                                                    size: 16,
-                                                    weight: 'normal'
-                                                }
+                                    plugins: {
+                                        title: {
+                                            display: true,
+                                            text: 'Player Speeds',
+                                            font: {
+                                                size: 16,
+                                                weight: 'normal'
                                             }
                                         }
                                     }
-                                })
-                                chart.update()
-                                this.closeUploader()
-                            } else {
-                                this.unsupported_input = !results.supported
-                                this.closeUploader()
-                            }
+                                }
+                            })
+                            chart.update()
+                            this.closeUploader()
+                        } else {
+                            this.unsupported_input = !results.supported
+                            this.closeUploader()
                         }
                     } else {
                         console.log("Failed with response " + JSON.stringify(data))

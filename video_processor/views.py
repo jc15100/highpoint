@@ -1,6 +1,5 @@
 import json
 import logging
-import datetime
 
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -9,19 +8,17 @@ from django.contrib.auth import login, get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.conf import settings
 
-from google.cloud import storage
-from google.cloud.storage._signing import generate_signed_url_v4
-
 from .models import Video, UserProfile
 from .serializers import VideoSerializer, UserProfileSerializer
 from .forms import UploadForm, DownloadLinkForm
 from .services.engine import Engine
 from .services.youtube_helper import YoutubeHelper
-from ml.pipeline.result import HighpointResult
+from .services.storage_helper import StorageHelper
 
 # Global variables for services
 engine = Engine()
 youtube = YoutubeHelper()
+storage_helper = StorageHelper()
 
 def upload_page(request):
     uploadForm = UploadForm(user_id=request.user.id)
@@ -85,14 +82,14 @@ def upload_url(request):
     user = _get_user_profile(request)
     if user.number_of_uploads > settings.FREE_QUOTA:
         print("User has reached free quota, returning")
-        return JsonResponse(json.dumps({'trial_done': True}))
+        return JsonResponse({'trial_done': True})
     else:
         body = json.loads(request.body)
         fileName = body['fileName']
         fileType = body['fileType']
-        storage_bucket = _get_storage_bucket_path(request.user, fileName)
+        storage_bucket = storage_helper.get_storage_bucket_path(request.user, fileName)
 
-        test_url = _get_signed_url_for_upload(storage_bucket, fileType, "PUT")
+        test_url = storage_helper.get_signed_url_for_upload(storage_bucket, fileType, "PUT")
         print("URL signed " + str(test_url))
         return JsonResponse({'url': test_url})
 
@@ -119,18 +116,8 @@ def upload(request):
             return JsonResponse({'success': False, 'results': []})
 
 def process(request):
-    body = json.loads(request.body)
-    fileName = body['fileName']
-
-    blob_path = _get_storage_bucket_path(request.user, fileName)
-    local_path = _get_local_copy(request.user, blob_path)
-
-    print("Local path: " + str(local_path))
-
-    result = engine.process(local_path, str(settings.MEDIA_ROOT), request)
-    result = _hydrate_results(request, result=result)
-
-    return JsonResponse({'success': True, 'results': result})
+    result = engine.process(request, output_path=str(settings.MEDIA_ROOT))
+    return JsonResponse({'success': True, 'results': result.__dict__})
 
 def signup(request):
     if request.method == 'POST':
@@ -153,67 +140,8 @@ def signup(request):
 
 # MARK: Private methods
 
-def _hydrate_results(request, result: HighpointResult):
-    result.group_highlight = _get_signed_url(result.group_highlight, "GET")
-    return result.__dict__
-
 def _get_user_profile(request):
     User = get_user_model()
     user_auth = User.objects.get(username=request.user) 
     user_p = UserProfile.objects.get(user=user_auth)
     return user_p
-
-def _get_storage_client():
-    return storage.Client.from_service_account_json(settings.CREDENTIALS_JSON)
-
-def _get_canonical_path(sub_bucket):
-    return "/" + settings.GS_BUCKET_NAME + "/" + sub_bucket
-
-def _get_storage_bucket_path(user, filename):
-    return "media" + "/{}/".format(user) + filename
-
-def _get_results_bucket_path(user, filename):
-    return "results" + "/{}/".format(user) + filename
-
-def _get_local_copy(user, blob_path):
-    client = _get_storage_client()
-    bucket_name = settings.GS_BUCKET_NAME
-    bucket = client.get_bucket(bucket_name)
-    video_blob = bucket.blob(blob_path)
-
-    local_video_path = str(settings.MEDIA_ROOT) + "/{}_local_video.mp4".format(str(user))
-    video_blob.download_to_filename(local_video_path)
-    return local_video_path
-
-def _get_signed_url_for_upload(sub_bucket, content_type, method):
-    client = _get_storage_client()
-    expiration = datetime.timedelta(minutes=15)
-    canonical_resource = _get_canonical_path(sub_bucket)
-
-    url = generate_signed_url_v4(
-        client._credentials,
-        resource=canonical_resource,
-        api_access_endpoint=settings.API_ACCESS_ENDPOINT,
-        expiration=expiration,
-        method=method,
-        content_type=content_type
-    )
-
-    print("generated signed url " + str(url))
-    return url
-
-def _get_signed_url(sub_bucket, method):
-    client = _get_storage_client()
-    expiration = datetime.timedelta(minutes=15)
-    canonical_resource = _get_canonical_path(sub_bucket)
-
-    url = generate_signed_url_v4(
-        client._credentials,
-        resource=canonical_resource,
-        api_access_endpoint=settings.API_ACCESS_ENDPOINT,
-        expiration=expiration,
-        method=method
-    )
-
-    print("generated signed url " + str(url))
-    return url

@@ -13,16 +13,19 @@ from ml.pipeline.service import RacquetSportsMLService
 from ml.pipeline.result import HighpointResult
 
 from ..models import Video, UserProfile
+from .storage_helper import StorageHelper
 
 local_storage = FileSystemStorage()
 local_storage.base_location = settings.MEDIA_ROOT
 
 class Engine:
     def __init__(self):
+        self.storage_helper = StorageHelper()
         self.ready = True
     
-    def process(self, video_path, output_path, request):
+    def process(self, request, output_path):
         service = RacquetSportsMLService()
+        video_path = self.local_copy(request)
 
         # check it's a supported sport video
         supported = service.check_supported_sport(video_path)
@@ -69,20 +72,23 @@ class Engine:
             # Store media results in Google cloud: smashes, group highlight and player frames
             # (1) smashes
             for smash_file in result.smashes:
-                smash_url = self.save_video_remotely(request.user, smash_file, timestamp)
+                smash_bucket_path = self.save_video_remotely(request.user, smash_file, timestamp)
+                smash_url = self.storage_helper.get_signed_url(smash_bucket_path, "GET")
                 smashes_urls.append(smash_url)
-                smash = Video.objects.create(type=Video.VideoTypes.SMASH, user=user_auth, web_url=smash_url)
+                smash = Video.objects.create(type=Video.VideoTypes.SMASH, user=user_auth, web_url=smash_url, filesystem_url=smash_bucket_path)
                 user.smashes.add(smash)
             
             # (2) player frames
             for frame_file in result.player_frames:
-                frame_url = self.save_video_remotely(request.user, frame_file, timestamp)
+                frame_bucket_path = self.save_video_remotely(request.user, frame_file, timestamp)
+                frame_url = self.storage_helper.get_signed_url(frame_bucket_path, "GET")
                 player_frames_urls.append(frame_url)
 
             # (3) highlight
             highlight_file = result.group_highlight
-            highlight_url = self.save_video_remotely(request.user, highlight_file, timestamp)
-            highlight = Video.objects.create(type=Video.VideoTypes.HIGHLIGHT, user=user_auth, web_url=highlight_url)
+            highlight_bucket_path = self.save_video_remotely(request.user, highlight_file, timestamp)
+            highlight_url = self.storage_helper.get_signed_url(highlight_bucket_path, "GET")
+            highlight = Video.objects.create(type=Video.VideoTypes.HIGHLIGHT, user=user_auth, web_url=highlight_url, filesystem_url=highlight_bucket_path)
             user.highlights.add(highlight)
 
             user.save()
@@ -97,6 +103,16 @@ class Engine:
                 supported=True
             )
     
+    def local_copy(self, request):
+        body = json.loads(request.body)
+        fileName = body['fileName']
+
+        blob_path = self.storage_helper.get_storage_bucket_path(request.user, fileName)
+        local_path = self.storage_helper.get_local_copy(request.user, blob_path)
+
+        print("Local path: " + str(local_path))
+        return local_path
+
     def save_video_remotely(self, user, video_path, timestamp):
         # temp_file is to avoid SuspiciousFileOperation while saving from file path
         temp_file = tempfile.NamedTemporaryFile(dir='media')
@@ -107,8 +123,7 @@ class Engine:
         storage_path = "results/" + str(user) + "/" + timestamp + "/" + os.path.basename(video_path)
         
         print("Storing at " + str(storage_path))
-        path = default_storage.save(storage_path, File(temp_file))
-        #return default_storage.url(path)
+        _ = default_storage.save(storage_path, File(temp_file))
         return str(storage_path)
         
     def save_video_locally(self, video):
