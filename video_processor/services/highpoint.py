@@ -40,7 +40,7 @@ class HighpointService:
 
         return result
 
-    def update_db(self, request, result):
+    def update_db(self, request, result: HighpointResult):
         print("Updating user profile in DB & results in storage for " + str(request.user))
 
         if result.supported == True:
@@ -55,13 +55,12 @@ class HighpointService:
 
             # Update DB
             # (1) smashes
-            for smash_url in result.smashes:
-                smash = Video.objects.create(type=Video.VideoTypes.SMASH, user=user_auth, web_url=smash_url, filesystem_url=smash_url)
+            for smash_name, smash_url in zip(result.smashes, result.smashes_urls):
+                smash = Video.objects.create(type=Video.VideoTypes.SMASH, user=user_auth, web_url=smash_url, filesystem_url=smash_name)
                 user.smashes.add(smash)
 
             # (2) highlight
-            highlight_url = result.group_highlight
-            highlight = Video.objects.create(type=Video.VideoTypes.HIGHLIGHT, user=user_auth, web_url=highlight_url, filesystem_url=highlight_url)
+            highlight = Video.objects.create(type=Video.VideoTypes.HIGHLIGHT, user=user_auth, web_url=result.group_highlight_url, filesystem_url=result.group_highlight)
             user.highlights.add(highlight)
 
             user.save()

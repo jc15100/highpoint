@@ -14,7 +14,7 @@ class Video(models.Model):
         SMASH = 'smash', 'Smash'
         HIGHLIGHT = 'highlight', 'Highlight'
 
-    web_url = models.URLField()
+    web_url = models.URLField(max_length=500)
     user = models.ForeignKey(User,verbose_name='User', related_name="videoUser", on_delete=models.CASCADE)
     filesystem_url = models.FileField()
     timestamp = models.DateTimeField(auto_now_add=True)
