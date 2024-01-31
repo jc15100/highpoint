@@ -70,9 +70,9 @@ class RacquetSportsMLService:
             smashes_urls=smashes_videos_urls,
             group_highlight=group_highlight_video, 
             group_highlight_url=group_highlight_url,
-            player_frames=player_frames,
-            player_frames_urls=player_frames_urls, 
             player_speeds=player_speeds, 
+            player_frames=player_frames,
+            player_frames_urls=player_frames_urls,
             supported=True
         )
 
