@@ -11,6 +11,8 @@ google-cloud-secret-manager
 google-cloud-logging
 google-cloud-storage
 django-storages[google]
+av
+io
 
 # ml
 # torch-cpu (for ultralytics)

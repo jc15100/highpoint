@@ -11,14 +11,12 @@ from django.conf import settings
 from .models import Video, UserProfile
 from .serializers import VideoSerializer, UserProfileSerializer
 from .forms import UploadForm, DownloadLinkForm
-from .services.engine import Engine
+from .services.highpoint import HighpointService
 from .services.youtube_helper import YoutubeHelper
-from .services.storage_helper import StorageHelper
 
 # Global variables for services
-engine = Engine()
+highpoint = HighpointService()
 youtube = YoutubeHelper()
-storage_helper = StorageHelper()
 
 def upload_page(request):
     uploadForm = UploadForm(user_id=request.user.id)
@@ -37,7 +35,7 @@ def user_content(request):
             videos = Video.objects.filter(user=User.objects.get(username=request.user), type=Video.VideoTypes.RAW)
             profile = UserProfile.objects.get(user=User.objects.get(username=request.user))
 
-            _renew_user_content(videos, profile)
+            highpoint.renew_user_content(videos, profile)
 
             video_serializer = VideoSerializer(videos, many=True)
             serialized_videos = video_serializer.data
@@ -72,7 +70,7 @@ def download_link(request):
                 video.filesystem_url = youtube.download_link(str(web_url), output_path)
 
                 if video.filesystem_url is not None:
-                    results = engine.process(video, output_path, request)
+                    results = highpoint.process(request)
                     return JsonResponse({'success': True, 'results': results})
                 else:
                     return JsonResponse({'success': False, 'results': json.dumps([])})
@@ -86,13 +84,7 @@ def upload_url(request):
         print("User has reached free quota, returning")
         return JsonResponse({'trial_done': True})
     else:
-        body = json.loads(request.body)
-        fileName = body['fileName']
-        fileType = body['fileType']
-        storage_bucket = storage_helper.get_storage_bucket_path(request.user, fileName)
-
-        test_url = storage_helper.get_signed_url_for_upload(storage_bucket, fileType, "PUT")
-        print("URL signed " + str(test_url))
+        test_url = highpoint.upload_signed_url(request)
         return JsonResponse({'url': test_url})
 
 def upload(request):
@@ -110,7 +102,7 @@ def upload(request):
                 video = form.save()
                 print("Video saved to storage")
 
-                results = engine.process(video, str(settings.MEDIA_ROOT), request)
+                results = highpoint.process(request)
 
             return JsonResponse({'success': True, 'results': results})
         else:
@@ -118,7 +110,7 @@ def upload(request):
             return JsonResponse({'success': False, 'results': []})
 
 def process(request):
-    result = engine.process(request, output_path=str(settings.MEDIA_ROOT))
+    result = highpoint.process(request)
     return JsonResponse({'success': True, 'results': result.__dict__})
 
 def signup(request):
@@ -147,20 +139,3 @@ def _get_user_profile(request):
     user_auth = User.objects.get(username=request.user) 
     user_p = UserProfile.objects.get(user=user_auth)
     return user_p
-
-def _renew_user_content(videos: [Video], profile: UserProfile):
-    print("Renewing ({}) Raw Videos".format(len(videos)))
-
-    for video in videos:
-        url = storage_helper.get_signed_url(str(video.filesystem_url), "GET")
-        video.web_url = url
-    
-    print("Renewing ({}) Smash Videos".format(len(profile.smashes.all())))
-    for smash in profile.smashes.all():
-        smash_url = storage_helper.get_signed_url(str(smash.filesystem_url), "GET")
-        smash.web_url = smash_url
-    
-    print("Renewing ({}) Highlight Videos".format(len(profile.highlights.all())))
-    for highlight in profile.highlights.all():
-        highlight_url = storage_helper.get_signed_url(str(highlight.filesystem_url), "GET")
-        highlight.web_url = highlight_url

@@ -1,12 +1,12 @@
 import numpy as np
 import json
-import cv2
-import os
+from datetime import datetime
 
 from .core.video import Video
 from .segmentation.segmenter import MatchSegmenter
 from .gpt.openai_vision import OpenAIVisionProcessor
 from .result import HighpointResult
+from .core.storage_helper import StorageHelper
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -15,43 +15,85 @@ class NumpyEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
     
 class RacquetSportsMLService:
-    openAIProcessor = OpenAIVisionProcessor()
 
-    def check_supported_sport(self, video_path) -> bool:
-        video = Video(video_path)
+    def __init__(self, storage_helper: StorageHelper) -> None:
+        self.storage_helper = storage_helper
+        self.segmenter = MatchSegmenter(plotting=False)
+        self.openAIProcessor = OpenAIVisionProcessor()
+
+    def check_supported_sport(self, video_url) -> bool:
+        video = Video(video_url)
         query="""Please answer with Yes or No. Only answer Yes if you are very confident. Does the image contain people playing the sport of padel, pickleball or tennis?"""
         check = self.openAIProcessor.run_check(video, query, frames_to_check=3)
         video.release()
 
         return check
 
-    def run_processing(self, video_path, output_path) -> {}:
+    def run_processing(self, video_url, request) -> {}:
         print("Video processing started.")
-        video = Video(video_path)
+        video = Video(video_url)
 
-        # (1) Use GPT model to extract smashes & any other critical metadata
-        smashes = self.extract_smashes(video, self.openAIProcessor)
-        smashes_videos_paths = video.extract_subvideos(smashes, video.fps*2, "smash-", output_path)
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+
+        # (1) Use GPT model to detect smashes & any other critical metadata
+        smashes = self.detect_smashes(video, self.openAIProcessor)
+        smashes_videos = self.extract_smashes(user=request.user, 
+                                                    video=video, 
+                                                    smashes=smashes, 
+                                                    window_size=video.fps*2, 
+                                                    name="smash-",
+                                                    timestamp=timestamp,
+                                                    storage_helper=self.storage_helper)
 
         video.reset()
 
         # (2) Segment the game into points, return longest point as highlight        
-        group_highlight, player_speeds, player_frames = self.extract_group_highlight(video, MatchSegmenter(plotting=False), output_path)
-        group_highlight_video_path = video.extract_subvideo(start_frame=group_highlight[0], end_frame=group_highlight[1], name="highlight-", output_path=output_path)
+        group_highlight, player_speeds, player_frames = self.detect_group_highlight(user=request.user, 
+                                                                                    video=video,
+                                                                                    segmenter=self.segmenter,
+                                                                                    timestamp=timestamp,
+                                                                                    storage_helper=self.storage_helper)
         
+        group_highlight_video_path = self.extract_group_highlight(user=request.user, 
+                                                                  video=video, 
+                                                                  start_frame=group_highlight[0], 
+                                                                  end_frame=group_highlight[1], 
+                                                                  name="highlight-",
+                                                                  timestamp=timestamp,
+                                                                  storage_helper=self.storage_helper)
         video.release()
 
         print("Video processing finished.")
 
         return HighpointResult(
-            smashes=smashes_videos_paths, 
+            smashes=smashes_videos, 
             group_highlight=group_highlight_video_path, 
             player_frames=player_frames, 
             player_speeds=player_speeds, 
             supported=True
         )
 
-    def extract_smashes(self, video, gpt_vision: OpenAIVisionProcessor):
+    # Private methods
+
+    def extract_smashes(self, user, video: Video, smashes, window_size, name, timestamp, storage_helper: StorageHelper):
+        subvideos = []
+        for frame_idx in smashes:
+            start_idx = int(frame_idx - window_size) if (frame_idx - window_size) > 0 else frame_idx
+            end_idx = max(int(frame_idx + window_size), video.get_frame_count())
+            
+            subvideo_bucket_path = storage_helper.get_results_bucket_path(user,  name + str(start_idx) + ".mp4", timestamp)
+            subvideo_url = storage_helper.get_signed_url(subvideo_bucket_path, "GET")
+            blob = storage_helper.get_blob(subvideo_bucket_path)
+
+            video_in_memory = video.extract_subvideo(start_idx, end_idx)
+            blob.upload_from_file(video_in_memory, content_type='video/mp4')
+
+            subvideos.append(subvideo_url)
+        
+        print("Extracted {} subvideos ".format(len(subvideos)))
+        return subvideos
+
+    def detect_smashes(self, video, gpt_vision: OpenAIVisionProcessor):
         print("Trying to extract smashes.")
 
         query = """Please answer with Yes or No. Only answer Yes if you are very confident. You will be shown an image of a game of padel, with 4 players playing doubles. 
@@ -59,7 +101,15 @@ A smash in padel is an aggressive overhead shot to finish the point. Is there an
         smashes = gpt_vision.process_video(video, query)
         return smashes
     
-    def extract_group_highlight(self, video, segmenter: MatchSegmenter, output_path):
+    def extract_group_highlight(self, user, video: Video, start_frame, end_frame, name, timestamp, storage_helper: StorageHelper):
+        subvideo_bucket_path = storage_helper.get_results_bucket_path(user, name + str(start_frame) + ".mp4", timestamp)
+        blob = storage_helper.get_blob(subvideo_bucket_path)
+        highlight_url = storage_helper.get_signed_url(subvideo_bucket_path, "GET")
+        video_in_memory = video.extract_subvideo(start_frame=start_frame, end_frame=end_frame)
+        blob.upload_from_file(video_in_memory, content_type='video/mp4')
+        return highlight_url
+
+    def detect_group_highlight(self, user, video, segmenter: MatchSegmenter, timestamp, storage_helper: StorageHelper):
         print("Trying to extract group highlight.")
 
         results_dict = segmenter.segment(video)
@@ -83,14 +133,14 @@ A smash in padel is an aggressive overhead shot to finish the point. Is there an
 
         player_speeds_json = json.dumps(player_speeds_non_np)
 
-        # save frames to filesystem
+        # save frames to storage
         player_frames = results_dict['player_frames']
-        player_frames_paths = []
+        player_frames_urls = []
         for id, player in enumerate(player_frames):
-            frame_filename = os.path.join(output_path, f"frame_{id:04d}.png")
-            cv2.imwrite(frame_filename, player)
-            player_frames_paths.append(frame_filename)
-        
-        print(player_frames_paths)
+            frame_bucket_path = storage_helper.get_results_bucket_path(user, f"frame_{id:04d}.png", timestamp)
+            blob = storage_helper.get_blob(frame_bucket_path)
+            frame_url = storage_helper.get_signed_url(frame_bucket_path, "GET")
+            player_frames_urls.append(frame_url)
+            storage_helper.upload_frame(player, blob)
 
-        return (longest_point, player_speeds_json, player_frames_paths)
+        return (longest_point, player_speeds_json, player_frames_urls)

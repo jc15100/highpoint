@@ -2,6 +2,8 @@ import cv2
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import av
+import io
 
 class Video:
     def __init__(self, video_path, debug=False):
@@ -52,40 +54,26 @@ class Video:
     def extract_frames(self, start, end):
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, start-1)
 
-        print("Extracting frames from " + str(start) + " to " + str(end))
+        print("Extracting frames from {} to {}".format(str(start), str(end)))
         count = end - start
         subset = []
-        while count >= 0:
-            frame = self.read_frame()
+        frame = self.read_frame()
+        while count >= 0 and frame is not None:
             frame = cv2.resize(frame, (0, 0), fx = 0.1, fy = 0.1)
-            count-=1
             subset.append(frame)
+            count-=1
+            frame = self.read_frame()
+        print("Done extracting frames.")
 
         return subset
-    
-    def extract_subvideos(self, frame_idx_list, window_size, name, output_path):
-        subvideos_paths = []
-        for frame_idx in frame_idx_list:
-            start_idx = int(frame_idx - window_size) if (frame_idx - window_size) > 0 else frame_idx
-            end_idx = max(int(frame_idx + window_size), self.get_frame_count())
-            subvideo_path = self.extract_subvideo(start_idx, end_idx, name, output_path)
-            subvideos_paths.append(subvideo_path)
-        
-        print("Extracted subvideos " + str(subvideos_paths))
-        return subvideos_paths
 
-    def extract_subvideo(self, start_frame, end_frame, name, output_path):
+    def extract_subvideo(self, start_frame, end_frame):
         current_poi = self.extract_frames(start_frame, end_frame)
 
         height = current_poi[0].shape[0]
         width = current_poi[0].shape[1]
 
-        print("Height %s and Width %s" %(height, width))
-
-        subvideo_path = output_path + os.sep + name + str(start_frame) + ".mp4"
-        self.frames_to_video(current_poi, height, width, subvideo_path)
-
-        return subvideo_path
+        return self.frames_to_video_in_memory(current_poi, height, width)
     
     def video_to_frames(self, output_path, already_done=False):
         frame_count = 0
@@ -135,16 +123,46 @@ class Video:
 
         return (frame_paths, height, width)
     
-    def frames_to_video(self, frames, height, width, output_video_path):
+    def frames_to_video_in_memory(self, frames, height, width):
+        # Set video settings & write to stream
+        output_memory_file = io.BytesIO()
+        output = av.open(output_memory_file, 'w', format="mp4")
+        stream = output.add_stream('h264', str(int(self.fps)))
+        stream.width = width
+        stream.height = height
+        stream.pix_fmt = 'yuv444p'
+        stream.options = {'crf': '17'}
+
+        print("Writing " + str(len(frames)) + " frames of " + str(width) + " by " + str(height))
+        for img in frames:
+            frame = av.VideoFrame.from_ndarray(img, format='bgr24')
+            packet = stream.encode(frame)
+            output.mux(packet)
+        packet = stream.encode(None)
+        output.mux(packet)
+        output.close()
+
+        output_memory_file.seek(0)
+        size_in_bytes = len(output_memory_file.getbuffer())
+
+        print(f"Size of BytesIO object: {size_in_bytes} bytes")
+
+        # # Write BytesIO from RAM to file, for testing
+        # with open("output.mp4", "wb") as f:
+        #     f.write(output_memory_file.getbuffer())
+        
+        return output_memory_file
+    
+    def frames_to_video(self, frames, height, width, output_video_url):
         # Set video settings
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        output_video = cv2.VideoWriter(output_video_path, fourcc, 30.0, (width, height))    
+        output_video = cv2.VideoWriter(output_video_url, fourcc, self.fps, (width, height))    
 
         if output_video.isOpened():
             print("Writing " + str(len(frames)) + " frames of " + str(width) + " by " + str(height) + " to the filesystem")
             for frame in frames:
                 output_video.write(frame)
-            print("Successfully saved video at " + str(output_video_path))
+            print("Successfully saved video at " + str(output_video_url))
         else:
             print("Failed to save video")
         output_video.release()
