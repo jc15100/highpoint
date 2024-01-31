@@ -4,15 +4,12 @@ from openai import OpenAI
 import base64
 import cv2
 import time
-from ..core.csv import CSVHelper
 
 # API key: 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
 
 class OpenAIVisionProcessor:
     def __init__(self) -> None:
         self.client = OpenAI(api_key=os.getenv("openaikey"))
-        self.keyframes_file = "keyframes_file"
-        self.csv = CSVHelper()
     
     def run_check(self, video, query, frames_to_check) -> bool:
         check_done = False
@@ -34,33 +31,25 @@ class OpenAIVisionProcessor:
         return check_done
 
     def process_video(self, video, query):
-        keyframes = None#self.csv.csvToArray(self.keyframes_file)
+        skip_count = 0
+        frame = video.read_frame_every(skip_count)
 
-        if keyframes is not None:
-            print("Key frames already computed, returning")
-            return keyframes
-        else:
-            skip_count = 0
+        start_frames_ids = []
+        # only find 2 smashes to save on GPT costs
+        while frame is not None and len(start_frames_ids) < 2:
+            start_time = time.time()
+            result = self.process_frame_with_query(frame, query)
+            print("process() took %s seconds" % (time.time() - start_time))
+            print("Processed %s frame with result %s" % (skip_count, result))
+                
+            if result.__contains__("Yes"):
+                start_frames_ids.append(skip_count)
+
+            skip_count+= int(video.fps)
+            print("Reading frame…")
             frame = video.read_frame_every(skip_count)
 
-            start_frames_ids = []
-            # only find 2 smashes to save on GPT costs
-            while frame is not None and len(start_frames_ids) < 2:
-                start_time = time.time()
-                result = self.process_frame_with_query(frame, query)
-                print("process() took %s seconds" % (time.time() - start_time))
-                print("Processed %s frame with result %s" % (skip_count, result))
-                
-                if result.__contains__("Yes"):
-                    start_frames_ids.append(skip_count)
-
-                skip_count+= int(video.fps)
-                print("Reading frame…")
-                frame = video.read_frame_every(skip_count)
-
-            print(start_frames_ids)
-            self.csv.saveArrayToCSV(start_frames_ids, self.keyframes_file)
-
+        print(start_frames_ids)
         return start_frames_ids
     
     def process_frame_with_query(self, frame, query) -> str:

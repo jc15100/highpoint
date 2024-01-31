@@ -7,7 +7,6 @@ from PIL import Image
 
 from ..core.yolo import YOLOStep
 from ..core.optical_flow import OpticalFlow
-from ..core.csv import CSVHelper
 from ..core.video import Video
 
 '''
@@ -19,8 +18,6 @@ class MatchSegmenter:
     def __init__(self, plotting) -> None:
         self.flow = OpticalFlow()
         self.plotting = plotting
-        self.csv = CSVHelper()
-        self.filename = "flows.csv"
         self.yolo = YOLOStep()
 
         # plotting variables
@@ -37,20 +34,12 @@ class MatchSegmenter:
     points are estipulated to be parts in between local minima.
     '''
     def segment(self, video: Video):
-        flows = None#self.csv.loadDictionary(self.filename)
-
-        if flows is not None:
-            print("Optical flow already computed for video, segmenting")
-            if self.plotting == True:
-                plt.plot(flows[1])
-                plt.show()
+        flows_per_player, player_frames = self.detection_flow(video, YOLOStep.person_name)
+        # use player with id=1 for segmentation
+        if 1 in flows_per_player:
+            flows = flows_per_player[1]
         else:
-            flows_per_player, player_frames = self.detection_flow(video, YOLOStep.person_name)
-            # use player with id=1 for segmentation
-            if 1 in flows_per_player:
-                flows = flows_per_player[1]
-            else:
-                flows = []
+            flows = []
 
         if len(flows) > 0:
             minima = argrelmin(flows, order=self.order)[0]
@@ -157,9 +146,6 @@ class MatchSegmenter:
                     # convolve the 1D array of speeds
                     speeds = np.convolve(speeds, np.ones(self.convolve_window)/self.convolve_window, mode='valid')
 
-            # save to CSV for later
-            self.csv.saveDictionary(speeds_per_player, self.filename)
-
             if self.plotting == True:
                 # plot one of the speeds
                 plt.plot(speeds_per_player[1])
@@ -203,9 +189,6 @@ class MatchSegmenter:
         
         # convolve the 1D array of sums to smooth out
         flows_sums = np.convolve(flows_sums, np.ones(10)/10, mode='valid')
-
-        # save to CSV for later
-        self.csv.saveArrayToCSV(flows_sums, "flows.csv")
         
         if self.plotting == True:
             plt.plot(flows_sums, color = 'blue')
@@ -247,9 +230,6 @@ class MatchSegmenter:
 
         # convolve the 1D array of sums to smooth out
         flows_sums = np.convolve(flows_sums, np.ones(10)/10, mode='valid')
-
-        # save to CSV for later
-        self.csv.saveArrayToCSV(flows_sums, self.filename)
 
         if self.plotting == True:
             plt.plot(flows_sums, color = 'blue')
