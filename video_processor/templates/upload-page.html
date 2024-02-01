@@ -309,15 +309,14 @@
                             this.smashes = this.smashes.concat(results.smashes_urls)
                             console.log("Smashes " + this.smashes)
                             
+                            this.player_frames = results.player_frames_urls
+                            console.log("Frames " + this.player_frames)
+                            
                             // display player speeds
                             player_speeds = JSON.parse(results.player_speeds)
                             console.log("Speed count: " + Object.keys(player_speeds).length)
-                            
                             const [datasets, labels] = this.handleSpeeds(player_speeds)
                             const chartContext = document.getElementById("playerSpeedsChart").getContext("2d")
-                            
-                            this.player_frames = results.player_frames_urls
-                            console.log("Frames " + this.player_frames)
                             
                             // populate chart
                             const chart = new Chart(chartContext, {

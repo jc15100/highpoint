@@ -131,8 +131,10 @@ class HighpointService:
         for smash in profile.smashes.all():
             smash_url = self.storage_helper.get_signed_url(str(smash.filesystem_url), "GET")
             smash.web_url = smash_url
+            print("smash.web_url set to {}".format(smash.web_url))
         
         print("Renewing ({}) Highlight Videos".format(len(profile.highlights.all())))
         for highlight in profile.highlights.all():
             highlight_url = self.storage_helper.get_signed_url(str(highlight.filesystem_url), "GET")
             highlight.web_url = highlight_url
+            print("highlight.web_url set to {}".format(highlight.web_url))
