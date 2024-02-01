@@ -1,22 +1,27 @@
 {% extends 'base.html' %}
 
 {% block content %}
-{% if user.is_authenticated %}
 <style>
     /* Custom CSS for delete button */
     .video-js .vjs-delete-button {
-      cursor: pointer;
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background-color: #ff5733;
-      color: #fff;
-      border: none;
-      padding: 8px;
-      border-radius: 5px;
-      font-size: 14px;
+        cursor: pointer;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #ff5733;
+        color: #fff;
+        border: none;
+        padding: 8px;
+        border-radius: 5px;
+        font-size: 14px;
+    }
+
+    .is-custom-highpoint {
+        background-color: #452DE8;
+        color: white;
     }
 </style>
+{% if user.is_authenticated %}
 <head>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js"></script>
 </head>
@@ -51,7 +56,7 @@
                 </div>
             </nav>
         </div>
-
+        
         <h3 class="subtitle is-6">Your uploads</h3>
         <div class="box columns is-multiline has-text-centered">
             <div v-for="result in videos" class="column is-3" @contextmenu="rightClickVideo">
@@ -78,7 +83,7 @@
                 </video>
             </div>
         </div>
-    
+        
         <h3 class="subtitle is-6">Your highlights</h3>
         <div class="box columns is-multiline has-text-centered">
             <div v-for="result in profile.highlights" class="column is-3">
@@ -97,9 +102,23 @@
 {% else %}
 <body>
     {% load static %}
-    <video autoplay muted loop id="landing">
+    <section class="hero is-mobile is-custom-highpoint">
+        <div class="hero-body has-text-centered">
+            <p class="title is-size-5-mobile has-text-weight-light is-custom-highpoint">
+                Upload your matches, reach your highpoint.
+            </p>
+        </div>
+    </section>
+    <video autoplay muted loop id="landing" class="pt-5 pb-5">
         <source src="{% static "video_processor/landing-video.mp4" %}" type="video/mp4">
     </video>
+    <section class="hero is-mobile is-custom-highpoint is-medium">
+        <div class="hero-body has-text-centered">
+            <p class="title is-size-5-mobile has-text-weight-light is-custom-highpoint">
+                AI that helps the average person look like a sports athlete.
+            </p>
+        </div>
+    </section>
 </body>
 {% endif %}
 
