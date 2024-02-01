@@ -1,2 +1,2 @@
 # highpoint
-Tech stack for highpoint.ai, a video AI app.
+Tech stack for highpoints.ai, a video AI app.

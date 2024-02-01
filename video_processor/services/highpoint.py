@@ -56,11 +56,11 @@ class HighpointService:
             # Update DB
             # (1) smashes
             for smash_name, smash_url in zip(result.smashes, result.smashes_urls):
-                smash = Video.objects.create(type=Video.VideoTypes.SMASH, user=user_auth, web_url=smash_url, filesystem_url=smash_name)
+                smash = Video.objects.create(type=Video.VideoTypes.SMASH, user=user_auth, filesystem_url=smash_name)
                 user.smashes.add(smash)
 
             # (2) highlight
-            highlight = Video.objects.create(type=Video.VideoTypes.HIGHLIGHT, user=user_auth, web_url=result.group_highlight_url, filesystem_url=result.group_highlight)
+            highlight = Video.objects.create(type=Video.VideoTypes.HIGHLIGHT, user=user_auth, filesystem_url=result.group_highlight)
             user.highlights.add(highlight)
 
             user.save()
