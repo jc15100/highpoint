@@ -8,7 +8,7 @@
     <link rel="icon" type="image/x-icon" href="{% static 'video_processor/favicon.ico' %}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.2/css/bulma.min.css">
     <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vue@3.2.45"></script>
+    <script src="https://unpkg.com/vue@3.2.45/dist/vue.global.prod.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <link href="https://vjs.zencdn.net/8.6.1/video-js.css" rel="stylesheet"/>
     <link href='https://unpkg.com/css.gg@2.0.0/icons/css/youtube.css' rel='stylesheet'>
@@ -21,13 +21,13 @@
             <a class="navbar-item" href="/">
                 <img src="{% static "video_processor/logo-3.png" %}" width="32" height="32">
             </a>
-            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+            <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="Menu">
                 <span aria-hidden="true"></span>
                 <span aria-hidden="true"></span>
                 <span aria-hidden="true"></span>
             </a>
         </div>
-        <div class="navbar-menu">
+        <div class="navbar-menu" id="Menu">
             <div class="navbar-start">
                 <div class="navbar-item has-dropdown is-hoverable">
                     <a class="navbar-link">
@@ -68,4 +68,26 @@
     {% block scripts %}
     {% endblock %}
 </body>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Get all "navbar-burger" elements
+        const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+      
+        // Add a click event on each of them
+        $navbarBurgers.forEach( el => {
+          el.addEventListener('click', () => {
+      
+            // Get the target from the "data-target" attribute
+            const target = el.dataset.target;
+            const $target = document.getElementById(target);
+      
+            // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+            el.classList.toggle('is-active');
+            $target.classList.toggle('is-active');
+      
+          });
+        });
+      
+      });
+</script>
 </html>
