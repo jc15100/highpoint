@@ -87,30 +87,8 @@ def upload_url(request):
         test_url = highpoint.upload_signed_url(request)
         return JsonResponse({'url': test_url})
 
-def upload(request):
-    if request.FILES:
-        form = UploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            # check if user has reached free quota
-            user = _get_user_profile(request)
-            if user.number_of_uploads > settings.FREE_QUOTA:
-                print("User has reached free quota, returning")
-                results = json.dumps({'trial_done': True})
-            else:
-                # add user to form & save video object in storage
-                form.instance.user = request.user
-                video = form.save()
-                print("Video saved to storage")
-
-                results = highpoint.process(request)
-
-            return JsonResponse({'success': True, 'results': results})
-        else:
-            print("Form not valid, skipping save")
-            return JsonResponse({'success': False, 'results': []})
-
 def process(request):
-    result = highpoint.process(request)
+    result = highpoint.process(request.user, request.body)
     return JsonResponse({'success': True, 'results': result.__dict__})
 
 def signup(request):

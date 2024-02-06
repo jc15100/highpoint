@@ -29,7 +29,7 @@ class RacquetSportsMLService:
 
         return check
 
-    def run_processing(self, video_url, request) -> {}:
+    def run_processing(self, video_url, user) -> {}:
         print("Video processing started.")
         video = Video(video_url)
 
@@ -37,7 +37,7 @@ class RacquetSportsMLService:
 
         # (1) Use GPT model to detect smashes & any other critical metadata
         smashes = self.detect_smashes(video, self.openAIProcessor)
-        smashes_videos, smashes_videos_urls = self.extract_smashes(user=request.user, 
+        smashes_videos, smashes_videos_urls = self.extract_smashes(user=user, 
                                               video=video, 
                                               smashes=smashes, 
                                               window_size=video.fps*2, 
@@ -48,13 +48,13 @@ class RacquetSportsMLService:
         video.reset()
 
         # (2) Segment the game into points, return longest point as highlight        
-        group_highlight, player_speeds, player_frames, player_frames_urls = self.detect_group_highlight(user=request.user, 
+        group_highlight, player_speeds, player_frames, player_frames_urls = self.detect_group_highlight(user=user, 
                                                                                     video=video,
                                                                                     segmenter=self.segmenter,
                                                                                     timestamp=timestamp,
                                                                                     storage_helper=self.storage_helper)
         
-        group_highlight_video, group_highlight_url = self.extract_group_highlight(user=request.user, 
+        group_highlight_video, group_highlight_url = self.extract_group_highlight(user=user, 
                                                                   video=video, 
                                                                   start_frame=group_highlight[0], 
                                                                   end_frame=group_highlight[1], 

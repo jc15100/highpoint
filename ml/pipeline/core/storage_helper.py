@@ -28,7 +28,7 @@ class StorageHelper:
         video_blob.download_to_filename(local_video_path)
         return local_video_path
 
-    def open_file(self, user, blob_path):
+    def open_file(self, blob_path):
         client = self.get_storage_client()
         bucket_name = settings.GS_BUCKET_NAME
         bucket = client.get_bucket(bucket_name)

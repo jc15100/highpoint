@@ -1,7 +1,6 @@
 import os
 import json
 import tempfile
-from datetime import datetime
 
 from django.contrib.auth import get_user_model
 from django.core.files.storage import default_storage, FileSystemStorage
@@ -24,8 +23,8 @@ class HighpointService:
         self.ready = True
         self.mlService = RacquetSportsMLService(self.storage_helper)
     
-    def process(self, request):
-        video_url = self.video_signed_url(request)
+    def process(self, user, body):
+        video_url = self.video_signed_url(user, body)
 
         # check it's a supported sport video
         supported = self.mlService.check_supported_sport(video_url)
@@ -35,17 +34,17 @@ class HighpointService:
         if not supported:
             result = {'supported': False}
         else:
-            result = self.mlService.run_processing(video_url, request)
-            self.update_db(request, result)
+            result = self.mlService.run_processing(video_url, user)
+            self.update_db(user, result)
 
         return result
 
-    def update_db(self, request, result: HighpointResult):
-        print("Updating user profile in DB & results in storage for " + str(request.user))
+    def update_db(self, user, result: HighpointResult):
+        print("Updating user profile in DB & results in storage for " + str(user))
 
         if result.supported == True:
             User = get_user_model()
-            user_auth = User.objects.get(username=request.user) 
+            user_auth = User.objects.get(username=user) 
             user = UserProfile.objects.get(user=user_auth)
             user.number_of_uploads += 1
 
@@ -64,17 +63,7 @@ class HighpointService:
             user.highlights.add(highlight)
 
             user.save()
-            print("Profile, storage updated for " + str(request.user))
-    
-    def local_copy(self, request):
-        body = json.loads(request.body)
-        fileName = body['fileName']
-
-        blob_path = self.storage_helper.get_storage_bucket_path(request.user, fileName)
-        local_path = self.storage_helper.download_local_copy(request.user, blob_path)
-
-        print("Local path: " + str(local_path))
-        return local_path
+            print("Profile, storage updated for " + str(user))
 
     def upload_signed_url(self, request):
         body = json.loads(request.body)
@@ -86,11 +75,11 @@ class HighpointService:
         test_url = self.storage_helper.get_signed_url_for_upload(storage_bucket, fileType, "PUT")
         return test_url
 
-    def video_signed_url(self, request):
-        body = json.loads(request.body)
+    def video_signed_url(self, user, body):
+        body = json.loads(body)
         fileName = body['fileName']
 
-        blob_path = self.storage_helper.get_storage_bucket_path(request.user, fileName)
+        blob_path = self.storage_helper.get_storage_bucket_path(user, fileName)
         video_file = self.storage_helper.get_signed_url(blob_path, "GET")
 
         return video_file

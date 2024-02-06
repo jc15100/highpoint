@@ -10,16 +10,14 @@ class YOLOStep:
     ball_name = 'sports ball'
     person_name = 'person'
     scale_factor = 0.3
-
-    def __init__(self):
-        self.model = YOLO('yolov8n.pt')
+    model = YOLO('yolov8n.pt')
 
     def predict(self, frame):
-        results = self.model(frame)
+        results = YOLOStep.model(frame)
         return results
     
     def track(self, frame):
-        results = self.model.track(frame)
+        results = YOLOStep.model.track(frame)
         return results
     
     def process_video(self, video):
