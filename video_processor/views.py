@@ -7,12 +7,14 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 
 from .models import Video, UserProfile
 from .serializers import VideoSerializer, UserProfileSerializer
 from .forms import UploadForm, DownloadLinkForm
 from .services.highpoint import HighpointService
 from .services.youtube_helper import YoutubeHelper
+from .tasks import create_task
 
 # Global variables for services
 highpoint = HighpointService()
@@ -88,8 +90,21 @@ def upload_url(request):
         return JsonResponse({'url': test_url})
 
 def process(request):
-    result = highpoint.process(request.user, request.body)
-    return JsonResponse({'success': True, 'results': result.__dict__})
+    payload = {}
+    payload["user"] = request.user.username
+    body = json.loads(request.body)
+    payload["fileName"] = body["fileName"]
+    create_task(url="/process_task/", payload=payload)
+
+    return JsonResponse({'success': True, 'results': []})
+
+@csrf_exempt
+def process_task(request):
+    payload = request.body.decode('utf-8')
+    logging.info("Reached task with payload {}".format(payload))
+    highpoint = HighpointService()
+    highpoint.process(payload.user, payload.fileName)
+    return JsonResponse({'success': True, 'results': []})
 
 def signup(request):
     if request.method == 'POST':

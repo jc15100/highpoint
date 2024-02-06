@@ -12,6 +12,10 @@ google-cloud-logging
 google-cloud-storage
 django-storages[google]
 av
+Flask
+gunicorn
+google-cloud-tasks
+Werkzeug
 
 # ml
 # torch-cpu (for ultralytics)

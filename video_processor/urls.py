@@ -12,6 +12,7 @@ urlpatterns = [
     path('uploader', views.upload_page, name='uploader'),
     path('upload_url/', views.upload_url, name='upload_url'),
     path('process/', views.process, name="process"),
+    path('/process_task/', views.process_task, name="process_task"),
     path('download_link/', views.download_link, name='download_link'),
     path('signup/', views.signup, name='signup'),
     path('login/', djviews.LoginView.as_view(template_name='login.html'), name='login'),

@@ -23,8 +23,8 @@ class HighpointService:
         self.ready = True
         self.mlService = RacquetSportsMLService(self.storage_helper)
     
-    def process(self, user, body):
-        video_url = self.video_signed_url(user, body)
+    def process(self, user, fileName):
+        video_url = self.video_signed_url(user, fileName)
 
         # check it's a supported sport video
         supported = self.mlService.check_supported_sport(video_url)
@@ -75,10 +75,7 @@ class HighpointService:
         test_url = self.storage_helper.get_signed_url_for_upload(storage_bucket, fileType, "PUT")
         return test_url
 
-    def video_signed_url(self, user, body):
-        body = json.loads(body)
-        fileName = body['fileName']
-
+    def video_signed_url(self, user, fileName):
         blob_path = self.storage_helper.get_storage_bucket_path(user, fileName)
         video_file = self.storage_helper.get_signed_url(blob_path, "GET")
 
