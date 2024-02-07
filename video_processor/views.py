@@ -1,7 +1,7 @@
 import json
 import logging
 
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, get_user_model
@@ -102,9 +102,10 @@ def process(request):
 def process_task(request):
     payload = request.body.decode('utf-8')
     logging.info("Reached task with payload {}".format(payload))
-    highpoint = HighpointService()
-    highpoint.process(payload.user, payload.fileName)
-    return JsonResponse({'success': True, 'results': []})
+    return HttpResponse('OK')
+    # highpoint = HighpointService()
+    # highpoint.process(payload.user, payload.fileName)
+    # return JsonResponse({'success': True, 'results': []})
 
 def signup(request):
     if request.method == 'POST':

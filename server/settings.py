@@ -250,4 +250,4 @@ FREE_QUOTA = 5
 PROJECT_ID = "pivotal-valve-407719"
 QUEUE_REGION = "us-east1"
 QUEUE_ID = "highpoint-queue"
-SECURE_REDIRECT_EXEMPT = [r"^/process_task/"]
+SECURE_REDIRECT_EXEMPT = [r'^process_task$']
