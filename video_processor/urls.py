@@ -1,4 +1,4 @@
-from django.urls import path, re_path
+from django.urls import path, re_path, include
 from django.contrib.auth import views as djviews
 from django.conf.urls.static import static
 from django.conf import settings
@@ -13,7 +13,7 @@ urlpatterns = [
     path('uploader', views.upload_page, name='uploader'),
     path('upload_url/', views.upload_url, name='upload_url'),
     path('process/', views.process, name="process"),
-    re_path(r'^process_task$', csrf_exempt(views.process_task), name='process_task'),
+    path('process_task/', csrf_exempt(views.process_task), name="process_task"),
     path('download_link/', views.download_link, name='download_link'),
     path('signup/', views.signup, name='signup'),
     path('login/', djviews.LoginView.as_view(template_name='login.html'), name='login'),

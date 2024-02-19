@@ -16,6 +16,8 @@ from .services.highpoint import HighpointService
 from .services.youtube_helper import YoutubeHelper
 from .tasks import create_task
 
+from django.views import View
+
 # Global variables for services
 highpoint = HighpointService()
 youtube = YoutubeHelper()
@@ -94,6 +96,7 @@ def process(request):
     payload["user"] = request.user.username
     body = json.loads(request.body)
     payload["fileName"] = body["fileName"]
+
     create_task(url="/process_task/", payload=payload)
 
     return JsonResponse({'success': True, 'results': []})
@@ -101,6 +104,7 @@ def process(request):
 @csrf_exempt
 def process_task(request):
     payload = request.body.decode('utf-8')
+    logging.info("Reached process_task!")
     logging.info("Reached task with payload {}".format(payload))
     return HttpResponse('OK')
     # highpoint = HighpointService()

@@ -79,7 +79,7 @@ if APPENGINE_URL:
 
     ALLOWED_HOSTS = [urlparse(APPENGINE_URL).netloc, "highpoints.ai", "https://highpoints.ai", "https://www.highpoints.ai", "www.highpoints.ai"]
     CSRF_TRUSTED_ORIGINS = [APPENGINE_URL]
-    SECURE_SSL_REDIRECT = True
+    #SECURE_SSL_REDIRECT = True
 else:
     ALLOWED_HOSTS = ["*"]
 
@@ -205,19 +205,23 @@ STORAGES = {
     },
 }
 
+REST_FRAMEWORK = {
+    "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%SZ",
+}
+
 # Needed for Django < 4.0, local environment
-if DEBUG == True:
-    DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
-    STATICFILES_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+# if DEBUG == True:
+#     DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+#     STATICFILES_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # storage
 GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
-    os.path.join(BASE_DIR, 'pivotal-valve-407719-6b57d2500253.json')
+    os.path.join(BASE_DIR, 'pivotal-valve-407719-c8b16575b0b3.json')
 )
-CREDENTIALS_JSON = os.path.join(BASE_DIR, 'pivotal-valve-407719-6b57d2500253.json')
+CREDENTIALS_JSON = os.path.join(BASE_DIR, 'pivotal-valve-407719-c8b16575b0b3.json')
 
 print("GS Credentials loaded: " + str(GS_CREDENTIALS))
 
@@ -246,8 +250,10 @@ LOGOUT_REDIRECT_URL = '/'
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# App-custom settings
 FREE_QUOTA = 5
+
+# Cloud Tasks setup
 PROJECT_ID = "pivotal-valve-407719"
 QUEUE_REGION = "us-east1"
 QUEUE_ID = "highpoint-queue"
-SECURE_REDIRECT_EXEMPT = [r'^process_task$']
