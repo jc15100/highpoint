@@ -106,10 +106,13 @@ def process_task(request):
     payload = request.body.decode('utf-8')
     logging.info("Reached process_task!")
     logging.info("Reached task with payload {}".format(payload))
+    
+    payload_json = json.loads(payload)
+
+    highpoint = HighpointService()
+    highpoint.process(payload_json["user"], payload_json["fileName"])
+
     return HttpResponse('OK')
-    # highpoint = HighpointService()
-    # highpoint.process(payload.user, payload.fileName)
-    # return JsonResponse({'success': True, 'results': []})
 
 def signup(request):
     if request.method == 'POST':
