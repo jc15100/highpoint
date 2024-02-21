@@ -82,23 +82,9 @@
 {% else %}
 <body>
     {% load static %}
-    <section class="hero is-mobile is-custom-highpoint">
-        <div class="hero-body has-text-centered">
-            <p class="title is-size-5-mobile has-text-weight-light is-custom-highpoint">
-                Upload your matches, reach your highpoint.
-            </p>
-        </div>
-    </section>
     <video autoplay muted loop id="landing" class="pt-5 pb-5">
         <source src="{% static "video_processor/landing-video.mp4" %}" type="video/mp4">
     </video>
-    <section class="hero is-mobile is-custom-highpoint is-medium">
-        <div class="hero-body has-text-centered">
-            <p class="title is-size-5-mobile has-text-weight-light is-custom-highpoint">
-                AI that helps the average person look like a sports athlete.
-            </p>
-        </div>
-    </section>
 </body>
 {% endif %}
 

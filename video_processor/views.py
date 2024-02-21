@@ -57,7 +57,7 @@ def download_link(request):
         form = DownloadLinkForm(request.POST)
         if form.is_valid():
             # check if user has reached free quota
-            user = _get_user_profile(request)
+            user = _get_user_profile(request.user)
             if user.number_of_uploads > settings.FREE_QUOTA:
                 print("User has reached free quota, returning")
                 results = json.dumps({'trial_done': True})
@@ -83,7 +83,7 @@ def download_link(request):
             return JsonResponse({'success': False, 'results': []})
 
 def upload_url(request):
-    user = _get_user_profile(request)
+    user = _get_user_profile(request.user)
     if user.number_of_uploads > settings.FREE_QUOTA:
         print("User has reached free quota, returning")
         return JsonResponse({'trial_done': True})
@@ -117,7 +117,7 @@ def process_task(request):
     
     payload_json = json.loads(payload)
 
-    user_profile = _get_user_profile(request)
+    user_profile = _get_user_profile(payload_json["user"])
     task_in_progress = Task.objects.create(task_identifier="test2-task", is_done=False, progress=5.0, user=user_profile.user)   
     user_profile.tasks_in_progress.add(task_in_progress)
     user_profile.save()
@@ -130,10 +130,11 @@ def process_task(request):
 import random
 # Eventually replace with WebSockets
 def task_status(request):
-    user_profile = _get_user_profile(request)
+    user_profile = _get_user_profile(request.user)
 
     task_in_progress = user_profile.tasks_in_progress.first()
     print(task_in_progress)
+    
     if task_in_progress is None:
         return JsonResponse({'success': True, 'tasks': {}})
     else:
@@ -160,8 +161,8 @@ def signup(request):
 
 # MARK: Private methods
 
-def _get_user_profile(request):
+def _get_user_profile(user):
     User = get_user_model()
-    user_auth = User.objects.get(username=request.user) 
+    user_auth = User.objects.get(username=user) 
     user_p = UserProfile.objects.get(user=user_auth)
     return user_p
