@@ -9,7 +9,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import Video, UserProfile
+from .models import Video, UserProfile, Task
 from .serializers import VideoSerializer, UserProfileSerializer
 from .forms import UploadForm, DownloadLinkForm
 from .services.highpoint import HighpointService
@@ -89,6 +89,8 @@ def upload_url(request):
         return JsonResponse({'trial_done': True})
     else:
         test_url = highpoint.upload_signed_url(request)
+        #user.number_of_uploads += 1
+        #user.save()
         return JsonResponse({'url': test_url})
 
 def process(request):
@@ -97,9 +99,15 @@ def process(request):
     body = json.loads(request.body)
     payload["fileName"] = body["fileName"]
 
-    create_task(url="/process_task/", payload=payload)
+    response = create_task(url="/process_task/", payload=payload)
 
-    return JsonResponse({'success': True, 'results': []})
+    # user_profile = _get_user_profile(request)
+
+    # task_in_progress = Task.objects.create(task_identifier="test-task", is_done=False, progress=5.0, user=user_profile.user)   
+    # user_profile.tasks_in_progress.add(task_in_progress)
+    # user_profile.save()
+
+    return JsonResponse({'success': True, 'task': "test-task"})
 
 @csrf_exempt
 def process_task(request):
@@ -109,10 +117,27 @@ def process_task(request):
     
     payload_json = json.loads(payload)
 
-    highpoint = HighpointService()
-    highpoint.process(payload_json["user"], payload_json["fileName"])
+    user_profile = _get_user_profile(request)
+    task_in_progress = Task.objects.create(task_identifier="test2-task", is_done=False, progress=5.0, user=user_profile.user)   
+    user_profile.tasks_in_progress.add(task_in_progress)
+    user_profile.save()
+
+    # highpoint = HighpointService()
+    # highpoint.process(payload_json["user"], payload_json["fileName"])
 
     return HttpResponse('OK')
+
+import random
+# Eventually replace with WebSockets
+def task_status(request):
+    user_profile = _get_user_profile(request)
+
+    task_in_progress = user_profile.tasks_in_progress.first()
+    print(task_in_progress)
+    if task_in_progress is None:
+        return JsonResponse({'success': True, 'tasks': {}})
+    else:
+        return JsonResponse({'success': True, 'tasks': {'task1': random.randint(1, 100), 'task2': random.randint(1, 100)}})
 
 def signup(request):
     if request.method == 'POST':

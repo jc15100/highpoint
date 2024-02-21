@@ -18,23 +18,27 @@
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="exampleModalLongTitle">Processing video…</h5>
+                            <h5 class="modal-title" id="uploadingTitle">Upload a video.</h5>
                             <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
                         
                         <div class="modal-body">
-                            <div class="block is-centered is-small">
-                                <progress class="progress is-small mt-5 is-info" :value.prop="progress" max="100"> [[ progress ]] </progress>
-                            </div>
+                            <label for="videoUpoad" class="subtitle is-6">Progress:</label>
+                            <progress id="videoUpoad" class="progress is-small mt-5 is-link" :value.prop="progress" max="100"> [[ progress ]] </progress>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary m-progress" data-dismiss="modal">Close</button>
                         </div>
                     </div>
                 </div>  
             </div>
             <!--End of processing modal-->
             
-            <div class="box">
+            <!-- Upload button -->
+            <div class="block">
                 <div class="block file is-link is-flex is-centered">
                     <label class="file-label">
                         <input class="file-input" type="file" ref="file" @change="selectFile" data-toggle="modal" data-target="#processingModal" multiple>
@@ -44,7 +48,7 @@
                                 <i class="fas fa-upload"></i>
                             </span>
                             <span class="file-label">
-                                Upload your video…
+                                Upload your video
                             </span>
                         </span>
                     </label>
@@ -62,7 +66,27 @@
                     </div>
                 </div> {% endcomment %}
             </div>
+
+            <!-- End of Upload button -->
+
+            <!-- Progress area -->
             
+            <div v-show="Object.keys(tasks_status).length">
+                <div class="box media" v-for="(progress, task) in tasks_status">
+                    <figure class="media-left">
+                        <p class="image is-128x128">
+                          <img src="https://bulma.io/images/placeholders/128x128.png">
+                          <p>[[ task ]] at [[ progress ]]</p>
+                        </p>
+                      </figure>
+                    <progress id="processingProgress" class="progress is-medium mt-5 is-link" :value.prop="progress" max="100"> [[ progress ]] </progress>
+                </div>
+            </div>
+
+            <!-- End of Progress area -->
+            
+            <!-- Special message area -->
+
             <div class="box" v-show="unsupported_input">
                 <article class="message is-danger">
                     <div class="message-header">
@@ -92,6 +116,8 @@
                     <div class="message-body">Please subscribe to highpoint.ai to continue uploading your matches.</div>
                 </article>
             </div>
+
+            <!-- End of Special message area -->
             
             <div class="box" v-show="smashes.length">
                 <div class="container">
@@ -146,6 +172,10 @@
         
         createApp({
             mounted() {
+                this.pollInterval = setInterval(this.pollTasksInProgress, 3000)
+            },
+            beforeDestroy () {
+                clearInterval(this.pollInterval)
             },
             data() {
                 return {
@@ -157,7 +187,9 @@
                     unsupported_input: false,
                     trial_over: false,
                     player_frames: [],
-                    error: false
+                    error: false,
+                    tasks_status: {},
+                    pollInterval: null,
                 }
             },
             delimiters: ['[[', ']]'],
@@ -196,7 +228,8 @@
                         return this.process(file)
                     })
                     .then(results => {
-                        this.handleResults(results)
+                        this.handleTaskSubmission(results)
+                        //this.handleResults(results)
                     })
                     .catch(error => {
                         if (this.trial_over == false) {
@@ -292,9 +325,37 @@
                     labels = firstPlayerSpeeds.map((element, index) => index)
                     return [datasets, labels]
                 },
+                handleTaskSubmission(response) {
+                    const data = response.data
+                    this.error = false
+                    this.closeUploader()
+                    this.progress = 0
+
+                    if (data['success']) {
+                        const data = response.data
+                        const task = data.task
+                        console.log(task)
+                    } else {
+                        console.log("Failed with response " + JSON.stringify(data))
+                        this.error = true
+                    }
+                },
+                pollTasksInProgress() {
+                    console.log("Polling for task status...")
+                    axios.get('/task_status/')
+                    .then(response => {
+                        const data = response.data
+                        const tasks = data.tasks
+                        for (const [task, progress] of Object.entries(tasks)) {
+                            this.tasks_status[task] = progress
+                        }
+                        console.log("Tasks Status updated " + JSON.stringify(this.tasks_status))
+                    })
+                },
                 handleResults(response) {
                     const data = response.data
                     this.error = false
+                    this.closeUploader()
                     
                     if (data['success']) {                    
                         console.log(data.results)
@@ -346,10 +407,8 @@
                                 }
                             })
                             chart.update()
-                            this.closeUploader()
                         } else {
                             this.unsupported_input = !results.supported
-                            this.closeUploader()
                         }
                     } else {
                         console.log("Failed with response " + JSON.stringify(data))

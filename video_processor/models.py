@@ -20,6 +20,12 @@ class Video(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     type = models.CharField(max_length=10, choices=VideoTypes.choices, default=VideoTypes.RAW)
 
+class Task(models.Model):
+    task_identifier = models.CharField(max_length=100)
+    is_done = models.BooleanField(default=False)
+    progress = models.FloatField(default=0.0)
+    user = models.ForeignKey(User,verbose_name='User', related_name="taskUser", on_delete=models.CASCADE)
+
 class UserProfile(models.Model):
     class PlanTypes(models.TextChoices):
         BASIC = 'basic', 'Basic'
@@ -31,6 +37,8 @@ class UserProfile(models.Model):
     number_of_uploads = models.IntegerField(default=0)
     level = models.FloatField(default=1.0)
     players = models.IntegerField(default=0)
+
+    tasks_in_progress = models.ManyToManyField(Task)
 
     smashes = models.ManyToManyField(Video)
     highlights = models.ManyToManyField(Video, related_name="highlights_videos")

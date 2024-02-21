@@ -1,26 +1,6 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<style>
-    /* Custom CSS for delete button */
-    .video-js .vjs-delete-button {
-        cursor: pointer;
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background-color: #ff5733;
-        color: #fff;
-        border: none;
-        padding: 8px;
-        border-radius: 5px;
-        font-size: 14px;
-    }
-
-    .is-custom-highpoint {
-        background-color: #452DE8;
-        color: white;
-    }
-</style>
 {% if user.is_authenticated %}
 <head>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js"></script>
@@ -57,7 +37,7 @@
             </nav>
         </div>
         
-        <h3 class="subtitle is-6">Your uploads</h3>
+        {% comment %} <h3 class="subtitle is-6">Your uploads</h3>
         <div class="box columns is-multiline has-text-centered">
             <div v-for="result in videos" class="column is-3" @contextmenu="rightClickVideo">
                 <video id="result-{{result.web_url}}" class="video-js" controls preload="auto" width="320" height="132">
@@ -68,7 +48,7 @@
                     </p>
                 </video>
             </div>
-        </div>
+        </div> {% endcomment %}
         
         <h3 class="subtitle is-6">Your smashes</h3>
         <div class="box columns is-multiline has-text-centered">

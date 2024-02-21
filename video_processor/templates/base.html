@@ -1,6 +1,26 @@
 {% load static %}
 <!DOCTYPE html>
 <html>
+<style>
+    /* Custom CSS for delete button */
+    .video-js .vjs-delete-button {
+        cursor: pointer;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #ff5733;
+        color: #fff;
+        border: none;
+        padding: 8px;
+        border-radius: 5px;
+        font-size: 14px;
+    }
+    
+    .is-custom-highpoint {
+        background-color: #452DE8;
+        color: white;
+    }
+</style>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -18,10 +38,7 @@
 <body>
     <nav class="navbar is-transparent" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
-            <a class="navbar-item" href="/">
-                <img src="{% static "video_processor/logo-3.png" %}" width="32" height="32">
-            </a>
-            <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="Menu">
+            <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="Menu" href="/">
                 <span aria-hidden="true"></span>
                 <span aria-hidden="true"></span>
                 <span aria-hidden="true"></span>
@@ -35,9 +52,10 @@
                     </a>
                     <div class="navbar-dropdown has-shadow">
                         {% if request.user.is_authenticated %}
-                        <form id="logout-form" method="post" action="{% url 'logout' %}">
+                        <a href="/" class="navbar-item">Home</a>
+                        <form class="navbar-item" id="logout-form" method="post" action="{% url 'logout' %}">
                             {% csrf_token %}
-                            <button class="button is-small is-fullwidth is-white is-clickable" type="submit">Log out {{request.user}}</button>
+                            <button class="navbar-item is-white" type="submit">Log out {{request.user}}</button>
                         </form>
                         {% else %}
                         <a href="{% url 'signup' %}" class="navbar-item">Sign up</a>
@@ -72,22 +90,22 @@
     document.addEventListener('DOMContentLoaded', () => {
         // Get all "navbar-burger" elements
         const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
-      
+        
         // Add a click event on each of them
         $navbarBurgers.forEach( el => {
-          el.addEventListener('click', () => {
-      
-            // Get the target from the "data-target" attribute
-            const target = el.dataset.target;
-            const $target = document.getElementById(target);
-      
-            // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
-            el.classList.toggle('is-active');
-            $target.classList.toggle('is-active');
-      
-          });
+            el.addEventListener('click', () => {
+                
+                // Get the target from the "data-target" attribute
+                const target = el.dataset.target;
+                const $target = document.getElementById(target);
+                
+                // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+                el.classList.toggle('is-active');
+                $target.classList.toggle('is-active');
+                
+            });
         });
-      
-      });
+        
+    });
 </script>
 </html>
