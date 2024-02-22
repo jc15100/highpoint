@@ -127,18 +127,17 @@ def process_task(request):
 
     return HttpResponse('OK')
 
-import random
 # Eventually replace with WebSockets
 def task_status(request):
     user_profile = _get_user_profile(request.user)
 
-    task_in_progress = user_profile.tasks_in_progress.first()
-    print(task_in_progress)
+    tasks: [Task] = user_profile.tasks_in_progress.all()
+    status = {}
+
+    for task_in_progress in tasks:
+        status[task_in_progress.task_identifier] = task_in_progress.progress
     
-    if task_in_progress is None:
-        return JsonResponse({'success': True, 'tasks': {}})
-    else:
-        return JsonResponse({'success': True, 'tasks': {'task1': random.randint(1, 100), 'task2': random.randint(1, 100)}})
+    return JsonResponse({'success': True, 'tasks': status})
 
 def signup(request):
     if request.method == 'POST':

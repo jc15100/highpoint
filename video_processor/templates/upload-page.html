@@ -172,7 +172,7 @@
         
         createApp({
             mounted() {
-                this.pollInterval = setInterval(this.pollTasksInProgress, 3000)
+                this.pollInterval = setInterval(this.pollTasksInProgress, 10000)
             },
             beforeDestroy () {
                 clearInterval(this.pollInterval)
