@@ -21,6 +21,13 @@ class RacquetSportsMLService:
         self.segmenter = MatchSegmenter(plotting=False)
         self.openAIProcessor = OpenAIVisionProcessor()
 
+    def video_length(self, video_url) -> bool:
+        video = Video(video_url)
+        length_secs = int(video.get_frame_count()/video.get_frame_rate())
+        video.release()
+
+        return length_secs
+
     def check_supported_sport(self, video_url) -> bool:
         video = Video(video_url)
         query="""Please answer with Yes or No. Only answer Yes if you are very confident. Does the image contain people playing the sport of padel, pickleball or tennis?"""

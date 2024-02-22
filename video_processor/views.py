@@ -100,30 +100,30 @@ def process(request):
     payload["fileName"] = body["fileName"]
 
     response = create_task(url="/process_task/", payload=payload)
-
-    # user_profile = _get_user_profile(request)
-
-    # task_in_progress = Task.objects.create(task_identifier="test-task", is_done=False, progress=5.0, user=user_profile.user)   
-    # user_profile.tasks_in_progress.add(task_in_progress)
-    # user_profile.save()
-
     return JsonResponse({'success': True, 'task': "test-task"})
 
 @csrf_exempt
 def process_task(request):
+    current_task_id = request.headers['X-AppEngine-TaskName']
+    logging.info("Request received for task {}".format(current_task_id))
+
     payload = request.body.decode('utf-8')
     logging.info("Reached process_task!")
     logging.info("Reached task with payload {}".format(payload))
     
     payload_json = json.loads(payload)
+    user = payload_json["user"]
+    fileName = payload_json["fileName"]
+
+    highpoint = HighpointService()
+    length = highpoint.estimate_time(fileName)
 
     user_profile = _get_user_profile(payload_json["user"])
-    task_in_progress = Task.objects.create(task_identifier="test2-task", is_done=False, progress=5.0, user=user_profile.user)   
+    task_in_progress = Task.objects.create(task_identifier=current_task_id, is_done=False, progress=length, user=user_profile.user)   
     user_profile.tasks_in_progress.add(task_in_progress)
     user_profile.save()
-
-    # highpoint = HighpointService()
-    # highpoint.process(payload_json["user"], payload_json["fileName"])
+    
+    highpoint.process(user, fileName)
 
     return HttpResponse('OK')
 
@@ -135,8 +135,14 @@ def task_status(request):
     status = {}
 
     for task_in_progress in tasks:
-        status[task_in_progress.task_identifier] = task_in_progress.progress
+        # we are checking every 10 seconds
+        progress_ticks = task_in_progress.progress / 10
+        current_progress = 100 / progress_ticks
+        status[task_in_progress.task_identifier] = current_progress
+        task_in_progress.progress = task_in_progress.progress * (current_progress + current_progress)
+        task_in_progress.save()
     
+    user_profile.save()
     return JsonResponse({'success': True, 'tasks': status})
 
 def signup(request):

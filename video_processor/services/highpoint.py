@@ -23,6 +23,10 @@ class HighpointService:
         self.ready = True
         self.mlService = RacquetSportsMLService(self.storage_helper)
     
+    def estimate_time(self, filename):
+        video_length = self.mlService.video_length(filename)
+        return video_length
+
     def process(self, user, fileName):
         video_url = self.video_signed_url(user, fileName)
 
