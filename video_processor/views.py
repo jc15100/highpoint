@@ -5,6 +5,7 @@ from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, get_user_model
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
@@ -144,6 +145,16 @@ def task_status(request):
     
     user_profile.save()
     return JsonResponse({'success': True, 'tasks': status})
+
+@login_required
+def subscription(request):
+    # products = Product.objects.all()
+
+    # context = {
+    #     'products': products
+    # }
+
+    return render(request, 'subscription.html', {'products': []})
 
 def signup(request):
     if request.method == 'POST':

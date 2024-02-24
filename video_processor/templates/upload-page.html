@@ -138,7 +138,9 @@
                             <div>Please subscribe to continue using our service.</div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="button is-info" data-dismiss="modal">Subscribe</button>
+                            <form action="{% url 'subscription' %}" method="get">
+                                <button class="button is-info" type="submit">Subscribe</button>
+                            </form>
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                         </div>
                     </div>
