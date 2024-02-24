@@ -25,10 +25,10 @@
                         </div>
                         
                         <div class="modal-body">
-                            <label for="videoUpoad" class="subtitle is-6">Progress:</label>
-                            <progress id="videoUpoad" class="progress is-small mt-5 is-link" :value.prop="progress" max="100"> [[ progress ]] </progress>
+                            <label for="videoUpload" class="subtitle is-6">Progress:</label>
+                            <progress id="videoUpload" class="progress is-small mt-5 is-link" :value.prop="progress" max="100"> [[ progress ]] </progress>
                         </div>
-
+                        
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary m-progress" data-dismiss="modal">Close</button>
                         </div>
@@ -66,57 +66,85 @@
                     </div>
                 </div> {% endcomment %}
             </div>
-
+            
             <!-- End of Upload button -->
-
+            
             <!-- Progress area -->
             
             <div v-show="Object.keys(tasks_status).length">
                 <div class="box media" v-for="(progress, task) in tasks_status">
                     <figure class="media-left">
                         <p class="image is-128x128">
-                          <img src="https://bulma.io/images/placeholders/128x128.png">
-                          <p>[[ task ]] at [[ progress ]]</p>
+                            <img src="https://bulma.io/images/placeholders/128x128.png">
+                            <p>[[ task ]] at [[ progress ]]</p>
                         </p>
-                      </figure>
+                    </figure>
                     <progress id="processingProgress" class="progress is-medium mt-5 is-link" :value.prop="progress" max="100"> [[ progress ]] </progress>
                 </div>
             </div>
-
+            
             <!-- End of Progress area -->
             
             <!-- Special message area -->
 
-            <div class="box" v-show="unsupported_input">
-                <article class="message is-danger">
-                    <div class="message-header">
-                        <p>Warning</p>
-                        <button class="delete" aria-label="delete"></button>
+            <div class="modal" id="unsupportedInput" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="uploadingTitle">Warning</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div>Apologies, but the video you've provided features a sport that is not supported.</div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
                     </div>
-                    <div class="message-body">Apologies, but the video you've provided features a sport that is not supported.</div>
-                </article>
+                </div>
             </div>
             
-            <div class="box" v-show="error">
-                <article class="message is-danger">
-                    <div class="message-header">
-                        <p>Warning</p>
-                        <button class="delete" aria-label="delete"></button>
+            <div class="modal" id="videoError" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="uploadingTitle">Warning</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div>Apologies, but the video you've provided has an error.</div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
                     </div>
-                    <div class="message-body">Apologies, but the video you've provided has an error.</div>
-                </article>
+                </div>
             </div>
             
-            <div class="box" v-show="trial_over">
-                <article class="message is-warning">
-                    <div class="message-header">
-                        <p>Trial Over</p>
-                        <button class="delete" aria-label="delete"></button>
+            <div class="modal" id="trialModal" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="uploadingTitle">Trial over.</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div>Please subscribe to continue using our service.</div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="button is-info" data-dismiss="modal">Subscribe</button>
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
                     </div>
-                    <div class="message-body">Please subscribe to highpoint.ai to continue uploading your matches.</div>
-                </article>
+                </div>
             </div>
-
+            
             <!-- End of Special message area -->
             
             <div class="box" v-show="smashes.length">
@@ -184,10 +212,8 @@
                     highlights: [],
                     video_uploaded: false,
                     progress: 0,
-                    unsupported_input: false,
                     trial_over: false,
                     player_frames: [],
-                    error: false,
                     tasks_status: {},
                     pollInterval: null,
                 }
@@ -210,6 +236,9 @@
                         if (response.data.trial_done) {
                             this.trial_over = true
                             console.log("Free trial done, please register for a subscription.")
+                            $('#trialModal').modal('show')
+
+                            this.closeUploader()
                             return null
                         } else { 
                             signed_url = response.data.url
@@ -240,7 +269,7 @@
                                     video['status'] = 'failed'
                                 }
                             })
-                            this.error = true
+                            $('#videoError').modal('show')
                         }
                     })
                 },
@@ -260,7 +289,7 @@
                                 video['status'] = 'failed'
                             }
                         })
-                        this.error = true
+                        $('#videoError').modal('show')
                     })
                 },
                 getUploadUrl(file) {
@@ -327,17 +356,16 @@
                 },
                 handleTaskSubmission(response) {
                     const data = response.data
-                    this.error = false
                     this.closeUploader()
                     this.progress = 0
-
+                    
                     if (data['success']) {
                         const data = response.data
                         const task = data.task
                         console.log(task)
                     } else {
                         console.log("Failed with response " + JSON.stringify(data))
-                        this.error = true
+                        $('#videoError').modal('show')
                     }
                 },
                 pollTasksInProgress() {
@@ -354,7 +382,6 @@
                 },
                 handleResults(response) {
                     const data = response.data
-                    this.error = false
                     this.closeUploader()
                     
                     if (data['success']) {                    
@@ -408,11 +435,11 @@
                             })
                             chart.update()
                         } else {
-                            this.unsupported_input = !results.supported
+                            $('#unsupportedInput').modal('show')
                         }
                     } else {
                         console.log("Failed with response " + JSON.stringify(data))
-                        this.error = true
+                        $('#videoError').modal('show')
                     }
                 }
             },
