@@ -270,6 +270,7 @@
                                 }
                             })
                             $('#videoError').modal('show')
+                            this.closeUploader()
                         }
                     })
                 },
@@ -290,6 +291,7 @@
                             }
                         })
                         $('#videoError').modal('show')
+                        this.closeUploader()
                     })
                 },
                 getUploadUrl(file) {
@@ -366,6 +368,7 @@
                     } else {
                         console.log("Failed with response " + JSON.stringify(data))
                         $('#videoError').modal('show')
+                        this.closeUploader()
                     }
                 },
                 pollTasksInProgress() {
@@ -436,10 +439,12 @@
                             chart.update()
                         } else {
                             $('#unsupportedInput').modal('show')
+                            this.closeUploader()
                         }
                     } else {
                         console.log("Failed with response " + JSON.stringify(data))
                         $('#videoError').modal('show')
+                        this.closeUploader()
                     }
                 }
             },
