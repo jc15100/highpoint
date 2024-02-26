@@ -17,6 +17,7 @@ urlpatterns = [
     path('task_status/', views.task_status, name="task_status"),
     path('download_link/', views.download_link, name='download_link'),
     path('subscription/', views.subscription, name='subscription'),
+    path('create-sub/', views.create_sub, name='create_sub'),
     path('signup/', views.signup, name='signup'),
     path('login/', djviews.LoginView.as_view(template_name='login.html'), name='login'),
     path('logout/', djviews.LogoutView.as_view(), name='logout'),

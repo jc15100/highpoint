@@ -1,5 +1,7 @@
 import json
 import logging
+import djstripe
+import stripe
 
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
@@ -18,6 +20,7 @@ from .services.youtube_helper import YoutubeHelper
 from .tasks import create_task
 
 from django.views import View
+from djstripe.models import Product
 
 # Global variables for services
 highpoint = HighpointService()
@@ -155,6 +158,48 @@ def subscription(request):
     # }
 
     return render(request, 'subscription.html', {'products': []})
+
+@login_required
+def create_sub(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        payment_method = data['payment_method']
+        stripe.api_key = djstripe.settings.STRIPE_SECRET_KEY
+
+        payment_method_obj = stripe.PaymentMethod.retrieve(payment_method)
+        djstripe.models.PaymentMethod.sync_from_stripe_data(payment_method_obj)
+
+        try:
+            customer = stripe.Customer.create(
+                payment_method=payment_method,
+                email=request.user.email,
+                invoice_settings={
+                    'default_payment_method': payment_method
+                }
+            )
+
+            djstripe_customer = djstripe.models.Customer.sync_from_stripe_data(customer)
+
+            subscription = stripe.Subscription.create(
+                customer=customer.id,
+                items=[
+                    {
+                        "price": data["price_id"]
+                    }
+                ],
+                expand=["latest_invoice.payment_intent"]
+            )
+
+            djstripe_subscription = djstripe.models.Subscription.sync_from_stripe_data(subscription)
+
+            request.user.userprofile.subscription = subscription.id
+            request.user.userprofile.save()
+
+            return JsonResponse(subscription)
+        except Exception as e:
+            return JsonResponse({'error': (e.args[0])}, status=403)
+    else:
+        return HttpResponse('Request method not allowed')
 
 def signup(request):
     if request.method == 'POST':

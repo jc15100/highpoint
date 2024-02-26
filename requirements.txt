@@ -6,6 +6,7 @@ django-environ==0.10.0
 psycopg2-binary==2.9.9
 django-cors-headers
 dj-stripe
+stripe
 djangorestframework
 gunicorn
 google-api-python-client

@@ -36,7 +36,7 @@
 
 {% block scripts %}
     <script src="https://js.stripe.com/v3/"></script>
-    <script type="text/javascript">
+    <script>
         const { createApp } = Vue
 
         createApp({
@@ -44,7 +44,7 @@
             delimiters: ['[[', ']]'],
             data () {
                 return {
-                    stripe: Stripe("pk_test_51H1EzYAXG1Cll3zzr1d6zcPexdHpcVeRtfO1HqHqEOiVBzbqW5YQVm32wFwmvv4eklY7jVqk3hPbRDxOjYopBA0K00ZzfGXgKb"),
+                    stripe: Stripe("pk_test_51H1EzYAXG1Cll3zzr1d6zcPexdHpcVeRtfO1HqHqEOiVBzbqW5YQVm32wFwmvv4eklY7jVqk3hPbRDxOjYopBA0K00ZzfGXgK"),
                     elements: '',
                     card: '',
                     price: ''
@@ -76,7 +76,7 @@
                                     payment_method: result.paymentMethod.id
                                 };
 
-                                fetch('/app/create-sub/', {
+                                fetch('/create-sub/', {
                                     method: 'POST',
                                     headers: {
                                         'Content-Type': 'application/json',
