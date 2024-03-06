@@ -5,3 +5,5 @@ from .models import *
 admin.site.register(Video)
 admin.site.register(UserProfile)
 admin.site.register(Task)
+admin.site.register(Image)
+admin.site.register(TaskResult)

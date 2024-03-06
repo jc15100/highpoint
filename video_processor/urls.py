@@ -10,14 +10,21 @@ from . import views
 urlpatterns = [
     path('', views.homepage, name='homepage'),
     path('user_content/', views.user_content, name='user_content'),
+
     path('uploader', views.upload_page, name='uploader'),
     path('upload_url/', views.upload_url, name='upload_url'),
-    path('process/', views.process, name="process"),
+
+    path('dispatch/', views.dispatch, name="dispatch"),
     path('process_task/', csrf_exempt(views.process_task), name="process_task"),
+
     path('task_status/', views.task_status, name="task_status"),
+    path('fetch_results/', views.fetch_results, name="fetch_results"),
+
     path('download_link/', views.download_link, name='download_link'),
+
     path('subscription/', views.subscription, name='subscription'),
     path('create-sub/', views.create_sub, name='create_sub'),
+
     path('signup/', views.signup, name='signup'),
     path('login/', djviews.LoginView.as_view(template_name='login.html'), name='login'),
     path('logout/', djviews.LogoutView.as_view(), name='logout'),

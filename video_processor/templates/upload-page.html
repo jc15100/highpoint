@@ -80,13 +80,14 @@
                         </p>
                     </figure>
                     <progress id="processingProgress" class="progress is-medium mt-5 is-link" :value.prop="progress" max="100"> [[ progress ]] </progress>
+                    <button class="button is-link" id="resultsButton" :disabled='progress != 100' @click="fetchResults(task)">Results</button>
                 </div>
             </div>
             
             <!-- End of Progress area -->
             
             <!-- Special message area -->
-
+            
             <div class="modal" id="unsupportedInput" tabindex="-1" role="dialog" aria-hidden="true">
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">
@@ -149,50 +150,54 @@
             
             <!-- End of Special message area -->
             
-            <div class="box" v-show="smashes.length">
-                <div class="container">
-                    <div class="columns is-centered">
-                        <div class="column is-half">
-                            <canvas id="playerSpeedsChart"></canvas>
+            <!-- Results Area -->
+            
+            <div class="modal" id="resultModal" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-content">
+                    
+                    <div class="box" v-show="player_speeds">
+                        <div class="columns is-centered">
+                            <div class="column is-half">
+                                <canvas id="playerSpeedsChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="columns is-centered is-mobile">
+                            <div class="column is-narrow has-text-centered" width="128" v-for="(image, index) in player_frames">
+                                <img class="image is-96x96" style="border-radius:50%" :src="image" :alt="'Player ' + (index + 1)"/>
+                                <p class="subtitle is-6">Player [[ index + 1 ]]</p>
+                            </div>
                         </div>
                     </div>
-                    <div class="columns is-centered is-mobile">
-                        <div class="column is-narrow has-text-centered" width="128" v-for="(image, index) in player_frames">
-                            <img class="image is-96x96" style="border-radius:50%" :src="image" :alt="'Player ' + (index + 1)"/>
-                            <p class="subtitle is-6">Player [[ index + 1 ]]</p>
+                    
+                    <div class="box" v-show="smashes.length">
+                        <h3 class="subtitle is-6">Smashes</h3>
+                        <div class="block" v-for="smash in smashes">
+                            <video id="result-{{smash}}" class="video-js" controls preload="auto" width="640" height="264">
+                                <source :src="smash" type="video/mp4" />
+                                <p class="vjs-no-js">
+                                    To view this video please enable JavaScript, and consider upgrading to a
+                                    web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                                </p>
+                            </video>
                         </div>
                     </div>
-                </div>
-            </div>
-            
-            <div class="box" v-show="smashes.length">
-                <div class="block">
-                    <h3 class="subtitle is-6">Smashes</h3>
-                    <div class="block" v-for="smash in smashes">
-                        <video id="result-{{smash}}" class="video-js" controls preload="auto" width="640" height="264">
-                            <source :src="smash" type="video/mp4" />
-                            <p class="vjs-no-js">
-                                To view this video please enable JavaScript, and consider upgrading to a
-                                web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-                            </p>
-                        </video>
+                    
+                    <div class="box" v-show="highlights.length">
+                        <h3 class="subtitle is-6">Match Highpoint</h3>
+                        <div class="block" v-for="highlight in highlights">
+                            <video id="result-{{highlight}}" class="video-js" controls preload="auto" width="640" height="264">
+                                <source :src="highlight" type="video/mp4" />
+                                <p class="vjs-no-js">
+                                    To view this video please enable JavaScript, and consider upgrading to a
+                                    web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                                </p>
+                            </video>
+                        </div>
                     </div>
+                    
                 </div>
-            </div>
-            
-            <div class="box" v-show="highlights.length">
-                <div class="block">
-                    <h3 class="subtitle is-6">Match Highpoint</h3>
-                    <div class="block" v-for="highlight in highlights">
-                        <video id="result-{{highlight}}" class="video-js" controls preload="auto" width="640" height="264">
-                            <source :src="highlight" type="video/mp4" />
-                            <p class="vjs-no-js">
-                                To view this video please enable JavaScript, and consider upgrading to a
-                                web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-                            </p>
-                        </video>
-                    </div>
-                </div>
+                <button class="modal-close is-large" aria-label="close" data-dismiss="modal"></button>
+                <!-- End of Results Area -->
             </div>
         </div>
     </section>
@@ -202,7 +207,8 @@
         
         createApp({
             mounted() {
-                this.pollInterval = setInterval(this.pollTasksInProgress, 10000)
+                this.pollInterval = setInterval(this.pollTasksInProgress, 5000)
+                this.pollTasksInProgress()
             },
             beforeDestroy () {
                 clearInterval(this.pollInterval)
@@ -218,6 +224,7 @@
                     player_frames: [],
                     tasks_status: {},
                     pollInterval: null,
+                    player_speeds: {}
                 }
             },
             delimiters: ['[[', ']]'],
@@ -239,7 +246,7 @@
                             this.trial_over = true
                             console.log("Free trial done, please register for a subscription.")
                             $('#trialModal').modal('show')
-
+                            
                             this.closeUploader()
                             return null
                         } else { 
@@ -256,11 +263,10 @@
                         })
                     })
                     .then(uploaded_url => {
-                        return this.process(file)
+                        return this.dispatch(file)
                     })
                     .then(results => {
                         this.handleTaskSubmission(results)
-                        //this.handleResults(results)
                     })
                     .catch(error => {
                         if (this.trial_over == false) {
@@ -318,12 +324,12 @@
                         onUploadProgress
                     })
                 },
-                process(file) {
+                dispatch(file) {
                     const body = {
                         fileName: file.name
                     };
                     
-                    return axios.post("/process/", body, {
+                    return axios.post("/dispatch/", body, {
                         headers: {
                             "Content-Type": "application/json",
                             "X-CSRFToken": "{{ csrf_token }}"
@@ -345,7 +351,7 @@
                         onUploadProgress
                     })
                 },
-                handleSpeeds(speeds) { 
+                speedHelper(speeds) { 
                     datasets = []
                     Object.entries(speeds).forEach(([playerId, playerSpeeds]) => {
                         datasets.push({
@@ -355,8 +361,15 @@
                     })
                     
                     const [[firstPlayerId, firstPlayerSpeeds]] = Object.entries(speeds);
-                    labels = firstPlayerSpeeds.map((element, index) => index)
+                    labels = [] //firstPlayerSpeeds.map((element, index) => index)
                     return [datasets, labels]
+                },
+                resetView() {
+                    this.highlights = []
+                    this.player_frames = []
+                    this.smashes = []
+                    this.player_speeds = {}
+                    
                 },
                 handleTaskSubmission(response) {
                     const data = response.data
@@ -385,14 +398,30 @@
                         console.log("Tasks Status updated " + JSON.stringify(this.tasks_status))
                     })
                 },
+                fetchResults(taskId) {
+                    const body = {
+                        taskId: taskId
+                    }
+                    console.log("Fetching results for " + taskId)
+                    return axios.post('/fetch_results/', body, {
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token }}"
+                        }
+                    })
+                    .then(results => {
+                        console.log("Received results " + results)
+                        this.handleResults(results)
+                    })
+                },
                 handleResults(response) {
                     const data = response.data
-                    this.closeUploader()
                     
                     if (data['success']) {                    
                         console.log(data.results)
                         results = data.results
-                        
+                        this.resetView()
+
                         if (results.supported) {
                             // add group_highlights
                             console.log("Highlight " + results.group_highlight)
@@ -406,12 +435,18 @@
                             console.log("Frames " + this.player_frames)
                             
                             // display player speeds
-                            player_speeds = JSON.parse(results.player_speeds)
+                            player_speeds = results.player_speeds
                             console.log("Speed count: " + Object.keys(player_speeds).length)
-                            const [datasets, labels] = this.handleSpeeds(player_speeds)
+                            const [datasets, labels] = this.speedHelper(player_speeds)
                             const chartContext = document.getElementById("playerSpeedsChart").getContext("2d")
                             
+                            this.player_speeds = player_speeds
+                            
                             // populate chart
+                            if (this.existingChart) {
+                                this.existingChart.destroy()
+                            }
+                            
                             const chart = new Chart(chartContext, {
                                 type: "line",
                                 data: {
@@ -439,6 +474,9 @@
                                 }
                             })
                             chart.update()
+                            this.existingChart = chart
+                            
+                            $('#resultModal').modal('show')
                         } else {
                             $('#unsupportedInput').modal('show')
                             this.closeUploader()

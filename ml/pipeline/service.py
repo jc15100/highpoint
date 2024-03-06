@@ -36,7 +36,7 @@ class RacquetSportsMLService:
 
         return check
 
-    def run_processing(self, video_url, user) -> {}:
+    def run_pipeline(self, video_url, user) -> HighpointResult:
         print("Video processing started.")
         video = Video(video_url)
 

@@ -12,15 +12,12 @@ from django.contrib.auth.forms import UserCreationForm
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import Video, UserProfile, Task
+from .models import Video, UserProfile, Task, TaskResult
 from .serializers import VideoSerializer, UserProfileSerializer
 from .forms import UploadForm, DownloadLinkForm
 from .services.highpoint import HighpointService
 from .services.youtube_helper import YoutubeHelper
 from .tasks import create_task
-
-from django.views import View
-from djstripe.models import Product
 
 # Global variables for services
 highpoint = HighpointService()
@@ -97,22 +94,23 @@ def upload_url(request):
         #user.save()
         return JsonResponse({'url': test_url})
 
-def process(request):
+def dispatch(request):
     payload = {}
     payload["user"] = request.user.username
     body = json.loads(request.body)
     payload["fileName"] = body["fileName"]
 
     response = create_task(url="/process_task/", payload=payload)
-    return JsonResponse({'success': True, 'task': "test-task"})
+    return JsonResponse({'success': True, 'task': response.name})
 
+import random
 @csrf_exempt
 def process_task(request):
     current_task_id = request.headers['X-AppEngine-TaskName']
     logging.info("Request received for task {}".format(current_task_id))
 
     payload = request.body.decode('utf-8')
-    logging.info("Reached process_task!")
+    #logging.info("Reached process_task!")
     logging.info("Reached task with payload {}".format(payload))
     
     payload_json = json.loads(payload)
@@ -120,16 +118,15 @@ def process_task(request):
     fileName = payload_json["fileName"]
 
     highpoint = HighpointService()
-    length = highpoint.estimate_time(fileName)
+    length = highpoint.estimate_time(user, fileName)
 
-    user_profile = _get_user_profile(payload_json["user"])
-    task_in_progress = Task.objects.create(task_identifier=current_task_id, is_done=False, progress=length, user=user_profile.user)   
+    user_profile = _get_user_profile(user)
+    task_in_progress = Task.objects.create(task_identifier=current_task_id, is_done=False, progress=0, estimated_time=length, user=user_profile.user)   
     user_profile.tasks_in_progress.add(task_in_progress)
     user_profile.save()
     
-    highpoint.process(user, fileName)
-
-    return HttpResponse('OK')
+    highpoint.process(user, fileName, current_task_id)
+    return JsonResponse({'success': True})
 
 # Eventually replace with WebSockets
 def task_status(request):
@@ -137,17 +134,32 @@ def task_status(request):
 
     tasks: [Task] = user_profile.tasks_in_progress.all()
     status = {}
-
+    
     for task_in_progress in tasks:
-        # we are checking every 10 seconds
-        progress_ticks = task_in_progress.progress / 10
-        current_progress = 100 / progress_ticks
-        status[task_in_progress.task_identifier] = current_progress
-        task_in_progress.progress = task_in_progress.progress * (current_progress + current_progress)
+        logging.info("Task in progress {}".format(task_in_progress))
+        if task_in_progress.is_done:
+            status[task_in_progress.task_identifier] = 100
+        else:
+            progress_ticks = task_in_progress.estimated_time / 10
+            current_progress = task_in_progress.progress
+            status[task_in_progress.task_identifier] = current_progress
+            task_in_progress.progress = task_in_progress.progress + progress_ticks
         task_in_progress.save()
     
     user_profile.save()
     return JsonResponse({'success': True, 'tasks': status})
+
+def fetch_results(request):
+    body = json.loads(request.body)
+    taskId = body["taskId"]
+
+    logging.info("Fetching results for {}".format(taskId))
+
+    task_result: TaskResult = TaskResult.objects.get(task_identifier=taskId)
+    results = highpoint.result_mapper(task_result, request.user)
+
+    print("Results {}".format(results.__dict__))
+    return JsonResponse({'success': True, 'results': results.__dict__})
 
 @login_required
 def subscription(request):

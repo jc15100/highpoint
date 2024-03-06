@@ -251,7 +251,7 @@ LOGOUT_REDIRECT_URL = '/'
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # App-custom settings
-FREE_QUOTA = 5
+FREE_QUOTA = 100
 
 # Cloud Tasks setup
 PROJECT_ID = "pivotal-valve-407719"
