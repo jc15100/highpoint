@@ -5,7 +5,7 @@ from .models import *
 class VideoSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Video
-        fields = [ 'filesystem_url', 'web_url']
+        fields = [ 'web_url', 'filesystem_url' ]
 
 class UserProfileSerializer(serializers.HyperlinkedModelSerializer):
     smashes = VideoSerializer(many=True)

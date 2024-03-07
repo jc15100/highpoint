@@ -8,6 +8,7 @@ class HighpointResult:
     player_frames: [str]
     player_frames_urls: [str]
     supported: bool
+    timestamp: str
 
     def __init__(self, 
                  smashes, 
@@ -17,7 +18,8 @@ class HighpointResult:
                  player_speeds, 
                  player_frames, 
                  player_frames_urls, 
-                 supported):
+                 supported,
+                 timestamp):
         self.smashes = smashes
         self.smashes_urls = smashes_urls
         self.group_highlight = group_highlight
@@ -26,4 +28,5 @@ class HighpointResult:
         self.player_frames = player_frames
         self.player_frames_urls = player_frames_urls
         self.supported = supported
+        self.timestamp = timestamp
         

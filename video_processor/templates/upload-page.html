@@ -329,7 +329,7 @@
                         fileName: file.name
                     };
                     
-                    return axios.post("/dispatch/", body, {
+                    return axios.post("/process_task/", body, {
                         headers: {
                             "Content-Type": "application/json",
                             "X-CSRFToken": "{{ csrf_token }}"

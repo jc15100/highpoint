@@ -80,7 +80,8 @@ class RacquetSportsMLService:
             player_speeds=player_speeds, 
             player_frames=player_frames,
             player_frames_urls=player_frames_urls,
-            supported=True
+            supported=True,
+            timestamp=timestamp
         )
 
     # Private methods

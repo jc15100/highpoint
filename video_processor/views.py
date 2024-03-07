@@ -35,10 +35,12 @@ def homepage(request):
 def user_content(request):
     if request.method == "GET":
         if request.user.is_authenticated == True:
-            User = get_user_model()
             print("Current user: " + str(request.user))
-            videos = Video.objects.filter(user=User.objects.get(username=request.user), type=Video.VideoTypes.RAW)
-            profile = UserProfile.objects.get(user=User.objects.get(username=request.user))
+
+            videos = Video.objects.filter(user=get_user_model().objects.get(username=request.user), type=Video.VideoTypes.RAW)
+            profile = _get_user_profile(request.user)
+
+            print("Found profile for {} with {} uploads".format(profile.user, profile.number_of_uploads))
 
             highpoint.renew_user_content(videos, profile)
 
@@ -106,15 +108,15 @@ def dispatch(request):
 import random
 @csrf_exempt
 def process_task(request):
-    current_task_id = request.headers['X-AppEngine-TaskName']
+    current_task_id = random.randint(0, 100)#request.headers['X-AppEngine-TaskName']
     logging.info("Request received for task {}".format(current_task_id))
 
     payload = request.body.decode('utf-8')
     #logging.info("Reached process_task!")
     logging.info("Reached task with payload {}".format(payload))
     
-    payload_json = json.loads(payload)
-    user = payload_json["user"]
+    payload_json = json.loads(request.body)#json.loads(payload)
+    user = request.user.username#payload_json["user"]
     fileName = payload_json["fileName"]
 
     highpoint = HighpointService()

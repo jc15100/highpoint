@@ -109,10 +109,11 @@
                         console.log(result.web_url)
                     })
                     this.profile = response.data.profile
+                    console.log("Profile received " + JSON.stringify(this.profile))
                     console.log("No. of uploads " + this.profile.number_of_uploads)
                     console.log("Level " + this.profile.level)
                     
-                    console.log("Smashes")
+                    console.log("Smashes " + this.profile.length)
                     this.profile.smashes.forEach((result) => {
                         console.log(result.web_url)
                     })
