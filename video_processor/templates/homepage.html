@@ -7,31 +7,36 @@
 </head>
 <body>
     <section class="is-mobile" id="app">
-        <h3 class="subtitle is-6">Your stats</h3>
-        <div class="box">
+        <h3 class="subtitle is-6">Progress</h3>
+        <div class="box outlined-div">
+            <canvas id="progressChart"></canvas>
+        </div>
+        
+        <h3 class="subtitle is-6">Stats</h3>
+        <div class="box outlined-div">
             <nav class="level">
                 <div class="level-item has-text-centered">
                     <div>
-                        <p class="heading has-text-link">Level</p>
-                        <p class="title has-text-link">[[ profile.level ]]</p>
+                        <p class="heading is-color-highpoint-pink">Level</p>
+                        <p class="title">[[ profile.level ]]</p>
                     </div>
                 </div>
                 <div class="level-item has-text-centered">
                     <div>
-                        <p class="heading has-text-grey">Uploads</p>
-                        <p class="title has-text-grey">[[ profile.number_of_uploads ]]</p>
+                        <p class="heading is-color-highpoint-pink">Uploads</p>
+                        <p class="title">[[ profile.number_of_uploads ]]</p>
                     </div>
                 </div>
                 <div class="level-item has-text-centered">
                     <div>
-                        <p class="heading has-text-grey">Smashes</p>
-                        <p class="title has-text-grey">[[ smashesCount() ]]</p>
+                        <p class="heading is-color-highpoint-pink">Smashes</p>
+                        <p class="title">[[ smashesCount() ]]</p>
                     </div>
                 </div>
                 <div class="level-item has-text-centered">
                     <div>
-                        <p class="heading has-text-grey">Total players</p>
-                        <p class="title has-text-grey">[[ profile.players ]]</p>
+                        <p class="heading is-color-highpoint-pink">Total players</p>
+                        <p class="title">[[ profile.players ]]</p>
                     </div>
                 </div>
             </nav>
@@ -50,10 +55,10 @@
             </div>
         </div> {% endcomment %}
         
-        <h3 class="subtitle is-6">Your smashes</h3>
-        <div class="box columns is-multiline has-text-centered">
+        <h3 class="subtitle is-6">Smashes</h3>
+        <div class="box columns is-multiline has-text-centered outlined-div">
             <div v-for="result in profile.smashes" class="column is-3">
-                <video id="result-{{result.web_url}}" class="video-js" controls preload="auto" width="320" height="132">
+                <video id="result-{{result.web_url}}" class="video-js outlined-div" controls preload="auto" width="320" height="132">
                     <source :src="result.web_url" type="video/mp4" />
                     <p class="vjs-no-js">
                         To view this video please enable JavaScript, and consider upgrading to a
@@ -64,10 +69,10 @@
             </div>
         </div>
         
-        <h3 class="subtitle is-6">Your highlights</h3>
-        <div class="box columns is-multiline has-text-centered">
+        <h3 class="subtitle is-6">Highlights</h3>
+        <div class="box columns is-multiline has-text-centered outlined-div">
             <div v-for="result in profile.highlights" class="column is-3">
-                <video id="result-{{result.web_url}}" class="video-js" controls preload="auto" width="320" height="132">
+                <video id="result-{{result.web_url}}" class="video-js outlined-div" controls preload="auto" width="320" height="132">
                     <source :src="result.web_url" type="video/mp4" />
                     <p class="vjs-no-js">
                         To view this video please enable JavaScript, and consider upgrading to a
@@ -124,6 +129,8 @@
                     })
                     
                     console.log("Players " + this.profile.players)
+                    
+                    this.buildProgressChart(response.data.graphData)
                 })
             },
             smashesCount() {
@@ -133,13 +140,90 @@
                     return 0
                 }
             },
+            buildProgressChart(progressData) {
+                labels = []
+                data = []
+
+                progressData.forEach((currentValue, index, array) => {
+                    console.log("Value at " + index + " is " + currentValue[0] + " - " + currentValue[1])
+
+                    const year = currentValue[0].substring(0, 4);
+                    const month = currentValue[0].substring(4, 6);
+                    const day = currentValue[0].substring(6, 8);
+
+                    labels.push(year + "/" + month + "/" + day)
+                    data.push(currentValue[1])
+                })
+
+                dataset = [{
+                    label: 'smashes',
+                    data: data,
+                    fill: false,
+                    borderColor: '#452DE8',
+                    cubicInterpolationMode: 'monotone',
+                    borderWidth: 2
+                }]
+                
+                const chartContext = document.getElementById("progressChart").getContext("2d")
+                
+                if (this.existingChart) {
+                    this.existingChart.destroy()
+                }
+                
+                const chart = new Chart(chartContext, {
+                    type: "line",
+                    data: {
+                        labels: labels,
+                        datasets: dataset,
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        responsive: true,
+                        scales: {
+                            y: {
+                                display: true,
+                                beginAtZero: true,
+                            },
+                        },
+                        interaction: {
+                            mode: 'nearest', // Enable nearest point detection
+                            intersect: false
+                        },
+                        zoom: {
+                            pinch: {
+                                enabled: true // Enable pinch to zoom
+                            },
+                            wheel: {
+                                enabled: true // Enable zooming with mouse wheel
+                            },
+                            mode: 'xy'
+                        },
+                        plugins: {
+                            title: {
+                                display: false,
+                                text: 'Smashes',
+                                font: {
+                                    size: 16,
+                                    weight: 'normal'
+                                }
+                            },
+                            legend: {
+                                display: false // Hide the legend
+                            },
+                        },
+                        
+                    }
+                })
+                chart.update()
+                this.existingChart = chart
+            },
             rightClickVideo(event) {
                 console.log("Right click video!" + event)
             }
         },
         created() {
             return this.fetchUserContent().then(() => {
-                console.log("Page initialized")
+                console.log("Home page initialized")
             })
         },
     })

@@ -31,10 +31,12 @@ class Task(models.Model):
     progress = models.FloatField(default=0.0)
     estimated_time = models.FloatField(default=0.0)
     user = models.ForeignKey(User,verbose_name='User', related_name="taskUser", on_delete=models.CASCADE)
+    thumbnail = models.OneToOneField(Image, related_name="videoThumbnail", on_delete=models.CASCADE, null=True)
 
 class TaskResult(models.Model):
     task_identifier = models.CharField(max_length=100)
-    
+    user = models.ForeignKey(User,verbose_name='User', related_name="taskResultUser", on_delete=models.CASCADE, null=True)
+
     smashes = models.ManyToManyField(Video, related_name="smashes")
     group_highlight = models.OneToOneField(Video, related_name="groupHighlight", on_delete=models.CASCADE, null=True)
     
@@ -49,6 +51,7 @@ class UserProfile(models.Model):
 
     user = models.ForeignKey(User,verbose_name='User', related_name="profileUser", on_delete=models.CASCADE)
     plan = models.CharField(max_length=20, choices=PlanTypes.choices, default=PlanTypes.BASIC)
+    subscription = models.CharField(max_length=100, default='')
     
     number_of_uploads = models.IntegerField(default=0)
     level = models.FloatField(default=1.0)
@@ -60,5 +63,8 @@ class UserProfile(models.Model):
     highlights = models.ManyToManyField(Video, related_name="highlights_videos")
 
     def isPro(self):
-        subscription = Subscription.objects.get(id=self.subscription)
-        return subscription.status
+        try:
+            subscription = Subscription.objects.get(id=self.subscription)
+            return subscription.status == 'active'
+        except Subscription.DoesNotExist:
+            return False

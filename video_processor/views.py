@@ -2,6 +2,7 @@ import json
 import logging
 import djstripe
 import stripe
+from datetime import datetime
 
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
@@ -12,7 +13,9 @@ from django.contrib.auth.forms import UserCreationForm
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import Video, UserProfile, Task, TaskResult
+from djstripe.models import Product, Subscription
+
+from .models import Video, UserProfile, Task, TaskResult, Image
 from .serializers import VideoSerializer, UserProfileSerializer
 from .forms import UploadForm, DownloadLinkForm
 from .services.highpoint import HighpointService
@@ -36,13 +39,28 @@ def user_content(request):
     if request.method == "GET":
         if request.user.is_authenticated == True:
             print("Current user: " + str(request.user))
+            user = get_user_model().objects.get(username=request.user)
 
-            videos = Video.objects.filter(user=get_user_model().objects.get(username=request.user), type=Video.VideoTypes.RAW)
+            videos = Video.objects.filter(user=user, type=Video.VideoTypes.RAW)
             profile = _get_user_profile(request.user)
 
-            print("Found profile for {} with {} uploads".format(profile.user, profile.number_of_uploads))
-
             highpoint.renew_user_content(videos, profile)
+
+            # find all task results, group by date, extract stats
+            task_results = TaskResult.objects.filter(user=user)
+
+            print("Found profile for {} with {} uploads & {} task_results".format(profile.user, profile.number_of_uploads, len(task_results.all())))
+
+            graph_data = []
+            data_by_date = {}
+            for task_result in task_results.all():
+                if task_result.timestamp in data_by_date:
+                    data_by_date[task_result.timestamp].append(len(task_result.smashes.all()))
+                else:
+                    data_by_date[task_result.timestamp] = [len(task_result.smashes.all())]
+
+            for timestamp, smash_counts in data_by_date.items():
+                graph_data.append((timestamp, sum(smash_counts)))
 
             video_serializer = VideoSerializer(videos, many=True)
             serialized_videos = video_serializer.data
@@ -50,7 +68,10 @@ def user_content(request):
             profile_serializer = UserProfileSerializer(profile)
             serialized_profile = profile_serializer.data
 
-            return JsonResponse({'success': True, 'videos': serialized_videos, 'profile': serialized_profile})
+            return JsonResponse({'success': True, 
+                                 'videos': serialized_videos, 
+                                 'profile': serialized_profile,
+                                 'graphData': graph_data})
         else:
             print("User not logged in")
             return JsonResponse({'success': True, 'videos': [], 'profile': ''})
@@ -86,14 +107,12 @@ def download_link(request):
             return JsonResponse({'success': False, 'results': []})
 
 def upload_url(request):
-    user = _get_user_profile(request.user)
-    if user.number_of_uploads > settings.FREE_QUOTA:
+    user_profile = _get_user_profile(request.user)
+    if not user_profile.isPro() and user_profile.number_of_uploads > settings.FREE_QUOTA:
         print("User has reached free quota, returning")
         return JsonResponse({'trial_done': True})
     else:
         test_url = highpoint.upload_signed_url(request)
-        #user.number_of_uploads += 1
-        #user.save()
         return JsonResponse({'url': test_url})
 
 def dispatch(request):
@@ -120,14 +139,19 @@ def process_task(request):
     fileName = payload_json["fileName"]
 
     highpoint = HighpointService()
-    length = highpoint.estimate_time(user, fileName)
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+
+    length, thumb_url = highpoint.initial_video_data(user, fileName, timestamp)
 
     user_profile = _get_user_profile(user)
-    task_in_progress = Task.objects.create(task_identifier=current_task_id, is_done=False, progress=0, estimated_time=length, user=user_profile.user)   
+    thumbnail = Image.objects.create(user=user_profile.user, url=thumb_url)
+    thumbnail.save()
+
+    task_in_progress = Task.objects.create(task_identifier=current_task_id, is_done=False, progress=0, estimated_time=length, user=user_profile.user, thumbnail=thumbnail)   
     user_profile.tasks_in_progress.add(task_in_progress)
     user_profile.save()
     
-    highpoint.process(user, fileName, current_task_id)
+    highpoint.process(user, fileName, current_task_id, timestamp)
     return JsonResponse({'success': True})
 
 # Eventually replace with WebSockets
@@ -139,16 +163,19 @@ def task_status(request):
     
     for task_in_progress in tasks:
         logging.info("Task in progress {}".format(task_in_progress))
+        print("Thumbnail {}".format(task_in_progress.thumbnail.url))
+        renewed_url = highpoint.renew_url(task_in_progress.thumbnail.url)
         if task_in_progress.is_done:
-            status[task_in_progress.task_identifier] = 100
+            status[task_in_progress.task_identifier] = (100, renewed_url)
         else:
             progress_ticks = task_in_progress.estimated_time / 10
             current_progress = task_in_progress.progress
-            status[task_in_progress.task_identifier] = current_progress
+            status[task_in_progress.task_identifier] = (current_progress, renewed_url)
             task_in_progress.progress = task_in_progress.progress + progress_ticks
         task_in_progress.save()
     
     user_profile.save()
+    print("Status {}".format(status))
     return JsonResponse({'success': True, 'tasks': status})
 
 def fetch_results(request):
@@ -164,21 +191,21 @@ def fetch_results(request):
     return JsonResponse({'success': True, 'results': results.__dict__})
 
 @login_required
-def subscription(request):
-    # products = Product.objects.all()
+def plans(request):
+    products = Product.objects.all()
+    user_profile = _get_user_profile(request.user)
+    context = {
+        'products': products,
+        'isPro': user_profile.isPro()
+    }
+    return render(request, 'plans.html', context)
 
-    # context = {
-    #     'products': products
-    # }
-
-    return render(request, 'subscription.html', {'products': []})
-
-@login_required
-def create_sub(request):
+def subscribe(request):
     if request.method == 'POST':
+        print("Creating subscription")
         data = json.loads(request.body)
         payment_method = data['payment_method']
-        stripe.api_key = djstripe.settings.STRIPE_SECRET_KEY
+        stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
 
         payment_method_obj = stripe.PaymentMethod.retrieve(payment_method)
         djstripe.models.PaymentMethod.sync_from_stripe_data(payment_method_obj)
@@ -189,10 +216,12 @@ def create_sub(request):
                 email=request.user.email,
                 invoice_settings={
                     'default_payment_method': payment_method
-                }
+                },
+                name=request.user.username
             )
 
             djstripe_customer = djstripe.models.Customer.sync_from_stripe_data(customer)
+            request.user.customer = djstripe_customer
 
             subscription = stripe.Subscription.create(
                 customer=customer.id,
@@ -204,16 +233,41 @@ def create_sub(request):
                 expand=["latest_invoice.payment_intent"]
             )
 
-            djstripe_subscription = djstripe.models.Subscription.sync_from_stripe_data(subscription)
+            _ = djstripe.models.Subscription.sync_from_stripe_data(subscription)
 
-            request.user.userprofile.subscription = subscription.id
-            request.user.userprofile.save()
+            user_profile = _get_user_profile(request.user)
+            user_profile.subscription = subscription.id
+            user_profile.save()
 
             return JsonResponse(subscription)
         except Exception as e:
+            print("Failing with " + str(e))
             return JsonResponse({'error': (e.args[0])}, status=403)
     else:
         return HttpResponse('Request method not allowed')
+
+def cancel_subscription(request):
+  if request.user.is_authenticated:
+    user_profile = _get_user_profile(request.user)
+
+    stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
+    
+    try:
+      # delete from Stripe
+      stripe.Subscription.delete(user_profile.subscription)
+
+      # delete from DB
+      Subscription.objects.get(id=user_profile.subscription).delete()
+
+      # update User Profile
+      user_profile.subscription = ''
+      user_profile.save()
+
+    except Exception as e:
+      return JsonResponse({'error test': (e.args[0])}, status = 403)
+
+  # redirect to homepage
+  return redirect("homepage")
 
 def signup(request):
     if request.method == 'POST':
@@ -240,4 +294,5 @@ def _get_user_profile(user):
     User = get_user_model()
     user_auth = User.objects.get(username=user) 
     user_p = UserProfile.objects.get(user=user_auth)
+    print("Is pro? " + str(user_p.isPro()))
     return user_p

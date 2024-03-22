@@ -22,8 +22,9 @@ urlpatterns = [
 
     path('download_link/', views.download_link, name='download_link'),
 
-    path('subscription/', views.subscription, name='subscription'),
-    path('create-sub/', views.create_sub, name='create_sub'),
+    path('plans/', views.plans, name='plans'),
+    path('subscribe/', views.subscribe, name='subscribe'),
+    path('cancel/', views.cancel_subscription, name='cancel_subscription'),
 
     path('signup/', views.signup, name='signup'),
     path('login/', djviews.LoginView.as_view(template_name='login.html'), name='login'),

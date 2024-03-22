@@ -25,12 +25,11 @@ class HighpointService:
         self.ready = True
         self.mlService = RacquetSportsMLService(self.storage_helper)
     
-    def estimate_time(self, user, filename):
+    def initial_video_data(self, user, filename, timestamp):
         video_url = self.file_signed_url(user, filename)
-        video_length = self.mlService.video_length(video_url)
-        return video_length
+        return self.mlService.video_data(user, video_url, timestamp)
 
-    def process(self, user, fileName, task_id):
+    def process(self, user, fileName, task_id, timestamp):
         video_url = self.file_signed_url(user, fileName)
 
         # check it's a supported sport video
@@ -41,7 +40,7 @@ class HighpointService:
         if not supported:
             result = {'supported': False}
         else:
-            # result = self.mlService.run_pipeline(video_url, user)
+            # result = self.mlService.run_pipeline(video_url, user, timestamp)
             result = HighpointResult(
             smashes=["smash-114.mp4"],
             smashes_urls=["test"],
@@ -114,7 +113,7 @@ class HighpointService:
                                timestamp = result.timestamp)
     
     def highpoint_mapper(self, highpoint: HighpointResult, user: User, task_id, profile: UserProfile) -> TaskResult:
-        task_result = TaskResult.objects.create(task_identifier=task_id, timestamp=highpoint.timestamp)
+        task_result = TaskResult.objects.create(task_identifier=task_id, timestamp=highpoint.timestamp, user=user)
 
         highlight = Video.objects.create(type=Video.VideoTypes.HIGHLIGHT, user=user, filesystem_url=highpoint.group_highlight, timestamp_string=highpoint.timestamp)
         task_result.group_highlight = highlight
@@ -202,3 +201,6 @@ class HighpointService:
             highlight.save()
 
         profile.save()
+    
+    def renew_url(self, url):
+        return self.storage_helper.get_signed_url(url, "GET")

@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container" id="app">
+    
+    {% for p in products %}
+    <div class="box has-text-left-mobile">
+        <h2 class="subtitle has-text-weight-semibold">{{ p.name }}</h2>
+        {% for plan in p.plan_set.all %}
+        <h3 class="has-text-weight-light">{{ plan.human_readable_price }}</h3>
+        <h7 class="is-size-6">{{ p.description }}</h7>
+        <input type="hidden" id="plan" value="{{ p.name }}">
+        <input type="hidden" id="price" value="{{ plan.human_readable_price }}">
+        <input type="hidden" id="priceId" value="{{ plan.id }}">
+        {% endfor %}
+    </div>
+    {% endfor %}
+
+    <!-- Subscribed already, offer to cancel -->
+    {% if isPro %}
+    
+    <div class="box text-center">
+        <h2 class="subtitle has-text-weight-semibold">Your subscription is active!</h2>
+        <a class="btn btn-danger text-light" href="/cancel">Cancel</a>
+    </div>
+    
+    {% else %}
+    
+    <!-- Not subscribed, offer to to buy -->
+
+    <form v-on:submit.prevent="buyPro" class="box">
+        <h3 class="subtitle has-text-weight-semibold">Card Info</h3>
+        
+        <div id="card"></div>
+        
+        <hr>
+        
+        <div class="field">
+            <div class="control">
+                <button class="button is-link">Buy</button>
+            </div>
+        </div>
+    </form>
+    
+    <div id="card-errors"></div>
+
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    const { createApp } = Vue
+    
+    createApp({
+        delimiters: ['[[', ']]'],
+        data () {
+            return {
+                stripe: Stripe("pk_test_51Ontz3GEgKLQIBk5o6WvvGQoWUWoM5SjQOgpfdx7ldyA0Ig1zM5AYcJUdi4S4jdb08npOzHEUBW2YjhIDgWM9yqP00SafQNsEh"),
+                elements: '',
+                card: '',
+                price: ''
+            }
+        },
+        mounted() {
+            this.elements = this.stripe.elements();
+            this.card = this.elements.create('card');
+            this.card.mount("#card");
+        },
+        methods: {
+            buyPro () {
+                let billingName = '{{ request.user.username }}'
+                
+                this.stripe
+                .createPaymentMethod({
+                    type: 'card',
+                    card: this.card,
+                    billing_details: {
+                        name: billingName
+                    },
+                })
+                .then((result) => {
+                    if (result.error) {
+                        alert('Error 1');
+                    } else {
+                        const paymentParams = {
+                            price_id: document.getElementById('priceId').value,
+                            payment_method: result.paymentMethod.id
+                        };
+                        body = JSON.stringify(paymentParams)
+                        return axios.post('/subscribe/', body, {
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-CSRFToken": "{{ csrf_token }}"
+                            }
+                        })
+                        .then((response) => {
+                            return response.data
+                        })
+                        .then((result) => {
+                            if (result && result.status === 'active') {
+                                console.log("Subscribed! " + result.status)
+                                window.location.href = '/plans/';
+                            }
+                        })
+                        .catch(function (error) {
+                            alert('Error 3' + error);
+                        })
+                    }
+                })
+            }
+        }
+    })
+    .mount('#app')
+</script>
+{% endblock %}

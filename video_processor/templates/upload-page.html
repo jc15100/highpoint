@@ -71,15 +71,23 @@
             <!-- Progress area -->
             
             <div v-show="Object.keys(tasks_status).length">
-                <div class="box media" v-for="(progress, task) in tasks_status">
-                    <figure class="media-left">
-                        <p class="image is-128x128">
-                            <img src="https://bulma.io/images/placeholders/128x128.png">
-                            <p>[[ task ]] at [[ progress ]]</p>
-                        </p>
-                    </figure>
-                    <progress id="processingProgress" class="progress is-medium mt-5 is-link" :value.prop="progress" max="100"> [[ progress ]] </progress>
-                    <button class="button is-link" id="resultsButton" :disabled='progress != 100' @click="fetchResults(task)">Results</button>
+                <div class="outlined-div box" v-for="(progressData, task) in tasks_status">
+                    <div class="columns">
+                        <div class="column">
+                            <figure class="image is-preview-size">
+                                <img class="outlined-div" :src="progressData[1]">
+                            </figure>
+                            <div class="columns is-vcentered">
+                                <div class="column is-four-fifths is-vcentered">
+                                    <progress class="progress is-small mt-5 pb-6 is-link" id="processingProgress" :value.prop="progressData[0]" max="100"> [[ progress[0] ]] </progress>
+                                    <div></div>
+                                </div>
+                                <div class="column has-text-centered">
+                                    <button class="button is-link" id="resultsButton" :disabled='progressData[0] != 100' @click="fetchResults(task)">Results</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -138,8 +146,8 @@
                             <div>Please subscribe to continue using our service.</div>
                         </div>
                         <div class="modal-footer">
-                            <form action="{% url 'subscription' %}" method="get">
-                                <button class="button is-info" type="submit">Subscribe</button>
+                            <form action="{% url 'plans' %}" method="get">
+                                <button class="button is-link" type="submit">Subscribe</button>
                             </form>
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                         </div>
@@ -162,7 +170,7 @@
                         </div>
                         <div class="columns is-centered is-mobile">
                             <div class="column is-narrow has-text-centered" width="128" v-for="(image, index) in player_frames">
-                                <img class="image is-96x96" style="border-radius:50%" :src="image" :alt="'Player ' + (index + 1)"/>
+                                <img class="image is-96x96 outlined-div" style="border-radius:50%" :src="image" :alt="'Player ' + (index + 1)"/>
                                 <p class="subtitle is-6">Player [[ index + 1 ]]</p>
                             </div>
                         </div>
@@ -171,7 +179,7 @@
                     <div class="box" v-show="smashes.length">
                         <h3 class="subtitle is-6">Smashes</h3>
                         <div class="block" v-for="smash in smashes">
-                            <video id="result-{{smash}}" class="video-js" controls preload="auto" width="640" height="264">
+                            <video id="result-{{smash}}" class="video-js outlined-div" controls preload="auto" width="640" height="264">
                                 <source :src="smash" type="video/mp4" />
                                 <p class="vjs-no-js">
                                     To view this video please enable JavaScript, and consider upgrading to a
@@ -184,7 +192,7 @@
                     <div class="box" v-show="highlights.length">
                         <h3 class="subtitle is-6">Match Highpoint</h3>
                         <div class="block" v-for="highlight in highlights">
-                            <video id="result-{{highlight}}" class="video-js" controls preload="auto" width="640" height="264">
+                            <video id="result-{{highlight}}" class="video-js outlined-div" controls preload="auto" width="640" height="264">
                                 <source :src="highlight" type="video/mp4" />
                                 <p class="vjs-no-js">
                                     To view this video please enable JavaScript, and consider upgrading to a
@@ -360,7 +368,7 @@
                     })
                     
                     const [[firstPlayerId, firstPlayerSpeeds]] = Object.entries(speeds);
-                    labels = [] //firstPlayerSpeeds.map((element, index) => index)
+                    labels = firstPlayerSpeeds.map((element, index) => index)
                     return [datasets, labels]
                 },
                 resetView() {
@@ -391,6 +399,7 @@
                     .then(response => {
                         const data = response.data
                         const tasks = data.tasks
+                        
                         for (const [task, progress] of Object.entries(tasks)) {
                             this.tasks_status[task] = progress
                         }
@@ -420,7 +429,7 @@
                         console.log(data.results)
                         results = data.results
                         this.resetView()
-
+                        
                         if (results.supported) {
                             // add group_highlights
                             console.log("Highlight " + results.group_highlight)
