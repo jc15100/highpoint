@@ -7,12 +7,12 @@
 </head>
 <body>
     <section class="is-mobile" id="app">
-        <h3 class="subtitle is-6">Progress</h3>
+        <h3 class="subtitle is-6"><span class="is-color-highpoint-pink">Progress</span></h3>
         <div class="box outlined-div">
             <canvas id="progressChart"></canvas>
         </div>
         
-        <h3 class="subtitle is-6">Stats</h3>
+        <h3 class="subtitle is-6"><span class="is-color-highpoint-pink">Stats</span></h3>
         <div class="box outlined-div">
             <nav class="level">
                 <div class="level-item has-text-centered">
@@ -55,7 +55,7 @@
             </div>
         </div> {% endcomment %}
         
-        <h3 class="subtitle is-6">Smashes</h3>
+        <h3 class="subtitle is-6"><span class="is-color-highpoint-pink">Smashes</span></h3>
         <div class="box columns is-multiline has-text-centered outlined-div">
             <div v-for="result in profile.smashes" class="column is-3">
                 <video id="result-{{result.web_url}}" class="video-js outlined-div" controls preload="auto" width="320" height="132">
@@ -69,7 +69,7 @@
             </div>
         </div>
         
-        <h3 class="subtitle is-6">Highlights</h3>
+        <h3 class="subtitle is-6"><span class="is-color-highpoint-pink">Highlights</span></h3>
         <div class="box columns is-multiline has-text-centered outlined-div">
             <div v-for="result in profile.highlights" class="column is-3">
                 <video id="result-{{result.web_url}}" class="video-js outlined-div" controls preload="auto" width="320" height="132">
@@ -86,10 +86,60 @@
 </body>
 {% else %}
 <body>
-    {% load static %}
-    <video autoplay muted loop id="landing" class="pt-5 pb-5">
-        <source src="{% static "video_processor/landing-video.mp4" %}" type="video/mp4">
-    </video>
+    <section class="is-mobile">
+        <div class="columns is-mobile">
+            <div class="column">
+                <section class="hero is-fullheight-with-navbar">
+                    <div class="hero-body">
+                      <h1 style="font-size: 4rem">Your personal <span style="color: #452DE8">sports AI</span> companion.</h1>
+                    </div>
+                </section>
+            </div>
+            <div class="column is-three-fifths">
+                <section class="hero is-fullheight-with-navbar">
+                    <div class="hero-body">
+                        {% load static %}
+                        <video autoplay muted loop id="landing" class="pt-5 pb-5">
+                            <source src="{% static "video_processor/landing-video.mp4" %}" type="video/mp4">
+                        </video>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </section>
+    <section class="hero is-medium is-mobile" id="playersInfo">
+        <div class="content hero-body is-large is-mobile">
+            <h1 style="font-size: 4rem; color: #452DE8">Players</h1>
+            <p>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla accumsan,
+                metus ultrices eleifend gravida, nulla nunc varius lectus, nec rutrum justo
+                nibh eu lectus. Ut vulputate semper dui. Fusce erat odio, sollicitudin vel
+                erat vel, interdum mattis neque.
+              </p>
+        </div>
+    </section>
+    <section class="hero is-medium is-mobile" id="enterprise">
+        <div class="content hero-body is-large is-mobile">
+            <h1 style="font-size: 4rem; color: #452DE8">Enterprise</h1>
+            <p>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla accumsan,
+                metus ultrices eleifend gravida, nulla nunc varius lectus, nec rutrum justo
+                nibh eu lectus. Ut vulputate semper dui. Fusce erat odio, sollicitudin vel
+                erat vel, interdum mattis neque.
+              </p>
+        </div>
+    </section>
+    <section class="hero is-medium is-mobile" id="howItWorks">
+        <div class="content hero-body is-large is-mobile">
+            <h1 style="font-size: 4rem; color: #452DE8">How it works?</h1>
+            <p>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla accumsan,
+                metus ultrices eleifend gravida, nulla nunc varius lectus, nec rutrum justo
+                nibh eu lectus. Ut vulputate semper dui. Fusce erat odio, sollicitudin vel
+                erat vel, interdum mattis neque.
+              </p>
+        </div>
+    </section>
 </body>
 {% endif %}
 
@@ -143,18 +193,18 @@
             buildProgressChart(progressData) {
                 labels = []
                 data = []
-
+                
                 progressData.forEach((currentValue, index, array) => {
                     console.log("Value at " + index + " is " + currentValue[0] + " - " + currentValue[1])
-
+                    
                     const year = currentValue[0].substring(0, 4);
                     const month = currentValue[0].substring(4, 6);
                     const day = currentValue[0].substring(6, 8);
-
+                    
                     labels.push(year + "/" + month + "/" + day)
                     data.push(currentValue[1])
                 })
-
+                
                 dataset = [{
                     label: 'smashes',
                     data: data,

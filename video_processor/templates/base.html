@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html class="has-navbar-fixed-top">
 <style>
     /* Custom CSS for delete button */
     .video-js .vjs-delete-button {
@@ -57,7 +57,7 @@
 </head>
 
 <body>
-    <nav class="navbar is-transparent" role="navigation" aria-label="main navigation">
+    <nav class="navbar is-transparent is-fixed-top is-mobile" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
             <img class="image is-64x64" src="{% static "video_processor/logo-3.png" %}" type="image/png"/>
             <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="Menu">
@@ -69,10 +69,25 @@
         
         <div class="navbar-menu" id="Menu">
             <div class="navbar-start">
+                {% if request.user.is_authenticated%}
                 <form class="navbar-item" id="home-form" method="post" action="{% url 'homepage' %}">
                     {% csrf_token %}
-                    <button class="button is-light is-responsive" type="submit">Home</button>
+                    <button class="button is-link is-light" type="submit">Dashboard</button>
                 </form>
+                {% else %}
+                <div class="navbar-item">
+                    <a href="{% url 'homepage' %}" class="is-responsive has-text-weight-light px-1">Overview</button>
+                </div>
+                <div class="navbar-item">
+                    <a href="{% url 'homepage' %}#playersInfo" class="is-responsive has-text-weight-light px-1">Players</a>
+                </div>
+                <div class="navbar-item">
+                    <a href="{% url 'homepage' %}#enterprise" class="is-responsive has-text-weight-light px-1">Enterprise</a>
+                </div>
+                <div class="navbar-item">
+                    <a href="{% url 'homepage' %}#howItWorks" class="is-responsive has-text-weight-light px-1">How it works</a>
+                </div>
+                {% endif %}
             </div>
             <div class="navbar-end">
                 {% if request.user.is_authenticated %}
@@ -120,7 +135,7 @@
     
     <footer class="footer has-background-white">
         <div class="content is-centered has-text-centered">
-            <p class="is-size-7 has-text-weight-light">Highpoint Labs LLC. 2024</p>
+            <p class="has-text-link has-text-weight-light">Highpoint Labs LLC. 2024</p>
         </div>
     </footer>
     
