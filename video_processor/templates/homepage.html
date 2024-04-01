@@ -86,12 +86,12 @@
 </body>
 {% else %}
 <body>
-    <section class="is-mobile">
+    <section class="is-mobile box">
         <div class="columns is-mobile">
             <div class="column">
                 <section class="hero is-fullheight-with-navbar">
                     <div class="hero-body">
-                      <h1 style="font-size: 4rem">Your personal <span style="color: #452DE8">sports AI</span> companion.</h1>
+                        <h1 style="font-size: 4rem">Your personal <span class="is-color-highpoint-blue">sports AI</span> companion.</h1>
                     </div>
                 </section>
             </div>
@@ -108,18 +108,31 @@
         </div>
     </section>
     <section class="hero is-medium is-mobile box" id="playersInfo">
-        <div class="content hero-body is-large is-mobile">
-            <img class="image is-64x64" src="{% static "video_processor/landing-image.png" %}" type="image/png"/>
-            <h1 style="font-size: 4rem; color: #452DE8">Players</h1>
-            <p>Track your progress. Keep tabs on your best plays & get coaching tips to improve your level of play.</p>
-            <p><a href="{% url 'signup' %}">Sign up</a> today!</p>
+        <div class="columns">
+            <div class="column">
+                <section class="hero is-medium">
+                    <div class="content hero-body is-mobile has-text-left">
+                        <h1 style="font-size: 4rem;">Players</h1>
+                        <h1 style="font-size: 3rem; font-weight: 100;">Track your progress, keep tabs on your best plays & get coaching tips to improve your level of play.</h1>
+                        <h1 style="font-size: 3rem"><a href="{% url 'signup' %}">Sign up</a> today &#127934;</h1>
+                    </div>
+                </section>
+            </div>
+            <div class="column is-three-fifths">
+                <section class="hero is-medium">
+                    <div class="hero-body">
+                        {% load static %}
+                        <img class="image is-5by4 pt-1 pb-1" src="{% static "video_processor/landing-image.png" %}" type="image/png"/>
+                    </div>
+                </section>
+            </div>
         </div>
     </section>
     <section class="hero is-medium is-mobile box" id="enterprise">
-        <div class="content hero-body is-large is-mobile">
-            <h1 style="font-size: 4rem; color: #452DE8">API</h1>
-            <p>Interested in using our APIs to process your video content?</p> 
-            <p>Reach out to <a href="mailto: customers@highpoint.ai">highpoint.ai</a></p>
+        <div class="content hero-body is-mobile has-text-left">
+            <h1 style="font-size: 4rem;">API</h1>
+            <h1 style="font-size: 3rem; font-weight: 100;">Interested in using our APIs to process your video content?</h1>
+            <h1 style="font-size: 3rem"><a href="mailto: customers@highpoint.ai">Reach out </a>&#9993;</h1>
         </div>
     </section>
 </body>
