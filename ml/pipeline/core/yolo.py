@@ -28,7 +28,7 @@ class YOLOStep:
                 frame_small = cv2.resize(current_frame, (0, 0), fx = self.scale_factor, fy = self.scale_factor)
                 results = self.track(frame_small)
                 annotated_frame = results[0].plot()
-                path = "frame-"+str(count)+".png"
+                path = "{:02d}.png".format(count)
                 cv2.imwrite(path, annotated_frame)
                 count+=1
             else:
@@ -40,7 +40,7 @@ class YOLOStep:
         frames = [f for f in os.listdir(frames_directory) if f.endswith('.png')]
 
         # Sort the files to maintain the correct order
-        frames.sort()
+        frames.sort(key=lambda f: int(''.join(filter(str.isdigit, f))))
 
         # Get the first frame to obtain image dimensions
         first_frame_path = os.path.join(frames_directory, frames[0])

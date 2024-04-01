@@ -17,7 +17,7 @@ from djstripe.models import Product, Subscription
 
 from .models import Video, UserProfile, Task, TaskResult, Image
 from .serializers import VideoSerializer, UserProfileSerializer
-from .forms import UploadForm, DownloadLinkForm
+from .forms import UploadForm, DownloadLinkForm, RegisterUserForm
 from .services.highpoint import HighpointService
 from .services.youtube_helper import YoutubeHelper
 from .tasks import create_task
@@ -271,7 +271,7 @@ def cancel_subscription(request):
 
 def signup(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = RegisterUserForm(request.POST)
 
         if form.is_valid():
             user = form.save()
