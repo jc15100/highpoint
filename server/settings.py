@@ -101,8 +101,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    'djstripe',
-    'video_processor.apps.VideoProcessorConfig',
+    "djstripe",
+    "video_processor.apps.VideoProcessorConfig",
 ]
 
 MIDDLEWARE = [
@@ -258,3 +258,6 @@ FREE_QUOTA = 1
 PROJECT_ID = "pivotal-valve-407719"
 QUEUE_REGION = "us-east1"
 QUEUE_ID = "highpoint-queue"
+
+# GeoLib
+GEOIP_PATH = BASE_DIR / 'geoip'

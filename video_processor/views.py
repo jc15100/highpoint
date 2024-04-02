@@ -2,7 +2,7 @@ import json
 import logging
 import djstripe
 import stripe
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
@@ -12,6 +12,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.gis.geoip2 import GeoIP2
 
 from djstripe.models import Product, Subscription
 
@@ -157,20 +158,31 @@ def process_task(request):
 # Eventually replace with WebSockets
 def task_status(request):
     user_profile = _get_user_profile(request.user)
-
+    request_address = _get_user_address(request)
+    
     tasks: [Task] = user_profile.tasks_in_progress.all()
     status = {}
     
     for task_in_progress in tasks:
         logging.info("Task in progress {}".format(task_in_progress))
-        print("Thumbnail {}".format(task_in_progress.thumbnail.url))
         renewed_url = highpoint.renew_url(task_in_progress.thumbnail.url)
+        formatted_timestamp = task_in_progress.timestamp.strftime("%I:%M %p, %m/%d/%Y")
+        formatted_duration = str(timedelta(seconds=task_in_progress.estimated_time))
+
         if task_in_progress.is_done:
-            status[task_in_progress.task_identifier] = (100, renewed_url)
+            status[task_in_progress.task_identifier] = (100, 
+                                                        renewed_url, 
+                                                        formatted_timestamp, 
+                                                        formatted_duration, 
+                                                        request_address)
         else:
             progress_ticks = task_in_progress.estimated_time / 10
             current_progress = task_in_progress.progress
-            status[task_in_progress.task_identifier] = (current_progress, renewed_url)
+            status[task_in_progress.task_identifier] = (current_progress, 
+                                                        renewed_url, 
+                                                        formatted_timestamp, 
+                                                        formatted_duration, 
+                                                        request_address)
             task_in_progress.progress = task_in_progress.progress + progress_ticks
         task_in_progress.save()
     
@@ -296,3 +308,22 @@ def _get_user_profile(user):
     user_p = UserProfile.objects.get(user=user_auth)
     print("Is pro? " + str(user_p.isPro()))
     return user_p
+
+def _get_user_address(request):
+    g = GeoIP2()
+    remote_addr = request.META.get('HTTP_X_FORWARDED_FOR')
+    if remote_addr:
+        address = remote_addr.split(',')[-1].strip()
+    else:
+        address = request.META.get('REMOTE_ADDR')
+    try:
+        country = g.country_code(address)
+        city = g.city(address)['city']
+
+        address = "{}, {}".format(city, country)
+        print(address)
+        return address
+    except:
+        print("Failed to find address for {}".format(address))
+        return "Unknown Location"
+    

@@ -17,6 +17,7 @@ django-storages[google]
 av
 gunicorn
 google-cloud-tasks
+geoip2
 
 ###
 # ml

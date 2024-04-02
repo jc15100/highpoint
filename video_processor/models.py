@@ -26,6 +26,7 @@ class Video(models.Model):
     type = models.CharField(max_length=10, choices=VideoTypes.choices, default=VideoTypes.RAW)
 
 class Task(models.Model):
+    timestamp = models.DateTimeField(auto_now_add=True, null=True)
     task_identifier = models.CharField(max_length=100)
     is_done = models.BooleanField(default=False)
     progress = models.FloatField(default=0.0)

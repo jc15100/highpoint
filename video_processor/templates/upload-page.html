@@ -74,10 +74,19 @@
                 <div class="outlined-div box" v-for="(progressData, task) in tasks_status">
                     <div class="columns">
                         <div class="column">
-                            <figure class="image is-preview-size">
-                                <img class="outlined-div" :src="progressData[1]">
-                            </figure>
-                            <div class="columns is-vcentered">
+                            <div class="columns is-vcentered pt-3">
+                                <div class="column">
+                                    <figure class="image is-preview-size is-three-fifths">
+                                        <img class="outlined-div" :src="progressData[1]">
+                                    </figure>
+                                </div>
+                                <div class="column">
+                                    <h4 class="is-color-highpoint-pink-light">[[ progressData[2] ]]</h4>
+                                    <h4 class="is-color-highpoint-pink-light">[[ progressData[3] ]]</h4>
+                                    <h4 class="is-color-highpoint-pink-light">[[ progressData[4] ]]</h4>
+                                </div>
+                            </div>
+                            <div class="columns is-vcentered pt-0">
                                 <div class="column is-four-fifths is-vcentered">
                                     <progress class="progress is-small mt-5 pb-6 is-link" id="processingProgress" :value.prop="progressData[0]" max="100"> [[ progress[0] ]] </progress>
                                     <div></div>
