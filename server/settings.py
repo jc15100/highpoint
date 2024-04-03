@@ -224,8 +224,6 @@ GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
 )
 CREDENTIALS_JSON = os.path.join(BASE_DIR, 'pivotal-valve-407719-c8b16575b0b3.json')
 
-print("GS Credentials loaded: " + str(GS_CREDENTIALS))
-
 API_ACCESS_ENDPOINT = 'https://storage.googleapis.com'
 GS_BUCKET_NAME = 'pivotal-valve-407719.appspot.com'
 GS_MAX_MEMORY_SIZE = 5000*1024*256

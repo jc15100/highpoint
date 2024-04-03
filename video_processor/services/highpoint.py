@@ -34,7 +34,6 @@ class HighpointService:
 
         # check it's a supported sport video
         supported = self.mlService.check_supported_sport(video_url)
-        #supported = True
         logging.info("Supported sport? " + str(supported))
 
         if not supported:
