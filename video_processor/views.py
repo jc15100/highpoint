@@ -128,15 +128,15 @@ def dispatch(request):
 import random
 @csrf_exempt
 def process_task(request):
-    current_task_id = random.randint(0, 100)#request.headers['X-AppEngine-TaskName']
+    current_task_id = request.headers['X-AppEngine-TaskName']
     logging.info("Request received for task {}".format(current_task_id))
 
     payload = request.body.decode('utf-8')
     #logging.info("Reached process_task!")
     logging.info("Reached task with payload {}".format(payload))
     
-    payload_json = json.loads(request.body)#json.loads(payload)
-    user = request.user.username#payload_json["user"]
+    payload_json = json.loads(payload)
+    user = payload_json["user"]
     fileName = payload_json["fileName"]
 
     highpoint = HighpointService()
