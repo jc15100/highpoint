@@ -33,24 +33,25 @@ class HighpointService:
         video_url = self.file_signed_url(user, fileName)
 
         # check it's a supported sport video
-        #supported = self.mlService.check_supported_sport(video_url)
-        supported = True
+        supported = self.mlService.check_supported_sport(video_url)
+        #supported = True
         logging.info("Supported sport? " + str(supported))
 
         if not supported:
             result = {'supported': False}
         else:
-            # result = self.mlService.run_pipeline(video_url, user, timestamp)
-            result = HighpointResult(
-            smashes=["smash-114.mp4"],
-            smashes_urls=["test"],
-            group_highlight="highlight-5.mp4", 
-            group_highlight_url="test",
-            player_speeds={"test":1}, 
-            player_frames=["frame_0000.png", "frame_0001.png"],
-            player_frames_urls=["test"],
-            supported=True,
-            timestamp = "20240306170154")
+            result = self.mlService.run_pipeline(video_url, user, timestamp)
+            
+            # result = HighpointResult(
+            # smashes=["smash-114.mp4"],
+            # smashes_urls=["test"],
+            # group_highlight="highlight-5.mp4", 
+            # group_highlight_url="test",
+            # player_speeds={"test":1}, 
+            # player_frames=["frame_0000.png", "frame_0001.png"],
+            # player_frames_urls=["test"],
+            # supported=True,
+            # timestamp = "20240306170154")
 
             self.update_db(user, result, task_id)
 
