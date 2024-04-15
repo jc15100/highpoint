@@ -41,6 +41,23 @@ class StorageHelper:
         bucket = client.get_bucket(bucket_name)
         video_blob = bucket.blob(bucket_path)
         return video_blob
+    
+    def delete_blob(self, blob_name):
+        storage_client = self.get_storage_client()
+        bucket_name = settings.GS_BUCKET_NAME
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(blob_name)
+        generation_match_precondition = None
+
+        # Optional: set a generation-match precondition to avoid potential race conditions
+        # and data corruptions. The request to delete is aborted if the object's
+        # generation number does not match your precondition.
+        blob.reload()  # Fetch blob metadata to use in generation_match_precondition.
+        generation_match_precondition = blob.generation
+
+        blob.delete(if_generation_match=generation_match_precondition)
+
+        print(f"Blob {blob_name} deleted.")
 
     def get_signed_url_for_upload(self, sub_bucket, content_type, method):
         client = self.get_storage_client()

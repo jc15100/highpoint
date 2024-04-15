@@ -71,28 +71,28 @@
             <!-- Progress area -->
             
             <div v-show="Object.keys(tasks_status).length">
-                <div class="outlined-div box" v-for="(progressData, task) in tasks_status">
+                <div class="box" v-for="(progressData, task) in tasks_status">
                     <div class="columns">
                         <div class="column">
-                            <div class="columns is-vcentered pt-3">
+                            <div class="columns is-vcentered pt-3 pb-0">
                                 <div class="column">
-                                    <figure class="image is-preview-size is-three-fifths">
+                                    <figure class="image is-preview-size">
                                         <img class="outlined-div" :src="progressData[1]">
                                     </figure>
                                 </div>
-                                <div class="column">
-                                    <h4 class="is-color-highpoint-pink-light">[[ progressData[2] ]]</h4>
-                                    <h4 class="is-color-highpoint-pink-light">[[ progressData[3] ]]</h4>
-                                    <h4 class="is-color-highpoint-pink-light">[[ progressData[4] ]]</h4>
+                                <div class="column is-7">
+                                    <h6 class="is-color-highpoint-pink">[[ progressData[2] ]]</h6>
+                                    <h6 class="is-color-highpoint-pink">[[ progressData[3] ]]</h6>
+                                    <h6 class="is-color-highpoint-pink">[[ progressData[4] ]]</h6>
+                                </div>
+                                <div class="column has-text-centered pt-1">
+                                    <button class="button is-link" id="resultsButton" :disabled='progressData[0] != 100' @click="fetchResults(task)">See Results</button>
                                 </div>
                             </div>
                             <div class="columns is-vcentered pt-0">
-                                <div class="column is-four-fifths is-vcentered">
-                                    <progress class="progress is-small mt-5 pb-6 is-link" id="processingProgress" :value.prop="progressData[0]" max="100"> [[ progress[0] ]] </progress>
+                                <div class="column is-full is-vcentered pt-1">
+                                    <progress class="progress is-small mt-5 pb-6 is-link pt-0" id="processingProgress" :value.prop="progressData[0]" max="100"> [[ progress[0] ]] </progress>
                                     <div></div>
-                                </div>
-                                <div class="column has-text-centered">
-                                    <button class="button is-link" id="resultsButton" :disabled='progressData[0] != 100' @click="fetchResults(task)">Results</button>
                                 </div>
                             </div>
                         </div>
@@ -171,7 +171,7 @@
             <div class="modal" id="resultModal" tabindex="-1" role="dialog" aria-hidden="true">
                 <div class="modal-content">
                     
-                    <div class="box" v-show="player_speeds">
+                    {% comment %} <div class="box" v-show="player_speeds">
                         <div class="columns is-centered">
                             <div class="column is-half">
                                 <canvas id="playerSpeedsChart"></canvas>
@@ -183,10 +183,10 @@
                                 <p class="subtitle is-6">Player [[ index + 1 ]]</p>
                             </div>
                         </div>
-                    </div>
+                    </div> {% endcomment %}
                     
-                    <div class="box" v-show="smashes.length">
-                        <h3 class="subtitle is-6">Smashes</h3>
+                    {% comment %} <div class="box" v-show="smashes.length">
+                        <h3 class="subtitle is-6 is-color-highpoint-pink">Smashes</h3>
                         <div class="block" v-for="smash in smashes">
                             <video id="result-{{smash}}" class="video-js outlined-div" controls preload="auto" width="640" height="264">
                                 <source :src="smash" type="video/mp4" />
@@ -196,18 +196,35 @@
                                 </p>
                             </video>
                         </div>
+                    </div> {% endcomment %}
+                    
+                    <div class="box" v-show="smashes.length">
+                        <h3 class="subtitle is-6"><span class="is-color-highpoint-pink">Smashes</span></h3>
+                        <div class="box columns is-multiline has-text-centered outlined-div">
+                            <div v-for="smash in smashes" class="column is-3">
+                                <video id="result-{{smash}}" class="video-js outlined-div" controls preload="auto" width="320" height="132">
+                                    <source :src="smash" type="video/mp4" />
+                                    <p class="vjs-no-js">
+                                        To view this video please enable JavaScript, and consider upgrading to a
+                                        web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                                    </p>
+                                </video>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="box" v-show="highlights.length">
-                        <h3 class="subtitle is-6">Match Highpoint</h3>
-                        <div class="block" v-for="highlight in highlights">
-                            <video id="result-{{highlight}}" class="video-js outlined-div" controls preload="auto" width="640" height="264">
-                                <source :src="highlight" type="video/mp4" />
-                                <p class="vjs-no-js">
-                                    To view this video please enable JavaScript, and consider upgrading to a
-                                    web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-                                </p>
-                            </video>
+                        <h3 class="subtitle is-6"><span class="is-color-highpoint-pink">Highlight</span></h3>
+                        <div class="box columns is-multiline has-text-centered outlined-div">
+                            <div v-for="highlight in highlights" class="column is-3">
+                                <video id="result-{{highlight}}" class="video-js outlined-div" controls preload="auto" width="320" height="132">
+                                    <source :src="highlight" type="video/mp4" />
+                                    <p class="vjs-no-js">
+                                        To view this video please enable JavaScript, and consider upgrading to a
+                                        web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                                    </p>
+                                </video>
+                            </div>
                         </div>
                     </div>
                     
@@ -345,7 +362,7 @@
                         fileName: file.name
                     };
                     
-                    return axios.post("/dispatch/", body, {
+                    return axios.post("/process_task/", body, {
                         headers: {
                             "Content-Type": "application/json",
                             "X-CSRFToken": "{{ csrf_token }}"
@@ -369,15 +386,18 @@
                 },
                 speedHelper(speeds) { 
                     datasets = []
-                    Object.entries(speeds).forEach(([playerId, playerSpeeds]) => {
-                        datasets.push({
-                            label: "Player " + playerId,
-                            data: playerSpeeds
+                    if (typeof speeds !== 'undefined') {
+                        Object.entries(speeds).forEach(([playerId, playerSpeeds]) => {
+                            datasets.push({
+                                label: "Player " + playerId,
+                                data: playerSpeeds
+                            })
                         })
-                    })
+                        
+                        const [[firstPlayerId, firstPlayerSpeeds]] = Object.entries(speeds);
+                    }
                     
-                    const [[firstPlayerId, firstPlayerSpeeds]] = Object.entries(speeds);
-                    labels = firstPlayerSpeeds.map((element, index) => index)
+                    labels = []//firstPlayerSpeeds.map((element, index) => index)
                     return [datasets, labels]
                 },
                 resetView() {
@@ -427,7 +447,6 @@
                         }
                     })
                     .then(results => {
-                        console.log("Received results " + results)
                         this.handleResults(results)
                     })
                 },
@@ -451,7 +470,7 @@
                             this.player_frames = results.player_frames_urls
                             console.log("Frames " + this.player_frames)
                             
-                            // display player speeds
+                            /* display player speeds
                             player_speeds = results.player_speeds
                             console.log("Speed count: " + Object.keys(player_speeds).length)
                             const [datasets, labels] = this.speedHelper(player_speeds)
@@ -491,7 +510,7 @@
                                 }
                             })
                             chart.update()
-                            this.existingChart = chart
+                            this.existingChart = chart*/
                             
                             $('#resultModal').modal('show')
                         } else {

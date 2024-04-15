@@ -40,17 +40,6 @@ class HighpointService:
             result = {'supported': False}
         else:
             result = self.mlService.run_pipeline(video_url, user, timestamp)
-            
-            # result = HighpointResult(
-            # smashes=["smash-114.mp4"],
-            # smashes_urls=["test"],
-            # group_highlight="highlight-5.mp4", 
-            # group_highlight_url="test",
-            # player_speeds={"test":1}, 
-            # player_frames=["frame_0000.png", "frame_0001.png"],
-            # player_frames_urls=["test"],
-            # supported=True,
-            # timestamp = "20240306170154")
 
             self.update_db(user, result, task_id)
 
@@ -62,7 +51,7 @@ class HighpointService:
             # Update user profile
             user_profile = UserProfile.objects.get(user=user_auth)
             user_profile.number_of_uploads += 1
-            user_profile.level = round(((1 / (len(user_profile.smashes.all()) + 1)) * 0.2) + user_profile.level, 2)
+            user_profile.level = max(round(((1 / (len(user_profile.smashes.all()) + 1)) * 0.2) + user_profile.level, 2), 5.0)
             user_profile.players += 4
             
             # Update task in progress & mark it done
@@ -93,7 +82,7 @@ class HighpointService:
         group_higlight = result.group_highlight.filesystem_url.name
         group_higlight_url = self.result_signed_url(user, group_higlight, result.timestamp)
 
-        player_speeds = json.loads(result.extracted_speeds)
+        player_speeds = {}#json.loads(result.extracted_speeds)
         
         player_frames = []
         player_frames_urls = []
@@ -101,6 +90,9 @@ class HighpointService:
         for image in result.player_frames.all():
             player_frames.append(image.url)
             player_frames_urls.append(self.result_signed_url(user, image.url, result.timestamp))
+        
+        player_frames = player_frames[:4]
+        player_frames_urls = player_frames_urls[:4]
     
         return HighpointResult(smashes = smashes, 
                                smashes_urls = smash_urls, 
@@ -149,8 +141,10 @@ class HighpointService:
         return video_file
 
     def result_signed_url(self, user, filename, timestamp):
-        blob_path = self.storage_helper.get_results_bucket_path(user, filename, timestamp)
-        video_file = self.storage_helper.get_signed_url(blob_path, "GET")
+        # print("filename {}".format(filename))
+        # blob_path = self.storage_helper.get_results_bucket_path(user, filename, timestamp)
+        # print("blob path {}".format(blob_path))
+        video_file = self.storage_helper.get_signed_url(filename, "GET")
 
         return video_file
 
@@ -204,3 +198,6 @@ class HighpointService:
     
     def renew_url(self, url):
         return self.storage_helper.get_signed_url(url, "GET")
+    
+    def cleanup_videos(self, video_path):
+        self.storage_helper.delete_blob(video_path)

@@ -42,8 +42,8 @@
     }
 
     .is-preview-size {
-        width: 395px;
-        height: 223px;
+        width: 198px;
+        height: 112px;
     }
 </style>
 <head>
@@ -95,7 +95,7 @@
                 <div class="navbar-item">
                     <form id="upload-form" method="post" action="{% url 'uploader' %}">
                         {% csrf_token %}
-                        <button class="button has-background-danger-dark is-responsive" type="submit">Upload</button>
+                        <button class="button is-success is-light is-responsive" type="submit">Upload</button>
                     </form>
                 </div>
                 <div class="navbar-item">

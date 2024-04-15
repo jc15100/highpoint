@@ -251,6 +251,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # App-custom settings
 FREE_QUOTA = 1
+HOURS_LIMIT = 48
 
 # Cloud Tasks setup
 PROJECT_ID = "pivotal-valve-407719"

@@ -2,7 +2,7 @@ import json
 import logging
 import djstripe
 import stripe
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
@@ -128,7 +128,7 @@ def dispatch(request):
 import random
 @csrf_exempt
 def process_task(request):
-    current_task_id = request.headers['X-AppEngine-TaskName']
+    current_task_id = random.randint(1, 100)#request.headers['X-AppEngine-TaskName']
     logging.info("Request received for task {}".format(current_task_id))
 
     payload = request.body.decode('utf-8')
@@ -136,11 +136,11 @@ def process_task(request):
     logging.info("Reached task with payload {}".format(payload))
     
     payload_json = json.loads(payload)
-    user = payload_json["user"]
+    user = request.user#payload_json["user"]
     fileName = payload_json["fileName"]
 
     highpoint = HighpointService()
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
 
     length, thumb_url = highpoint.initial_video_data(user, fileName, timestamp)
 
@@ -162,29 +162,31 @@ def task_status(request):
     
     tasks: [Task] = user_profile.tasks_in_progress.all()
     status = {}
-    
-    for task_in_progress in tasks:
-        logging.info("Task in progress {}".format(task_in_progress))
-        renewed_url = highpoint.renew_url(task_in_progress.thumbnail.url)
-        formatted_timestamp = task_in_progress.timestamp.strftime("%I:%M %p, %m/%d/%Y")
-        formatted_duration = str(timedelta(seconds=task_in_progress.estimated_time))
 
-        if task_in_progress.is_done:
-            status[task_in_progress.task_identifier] = (100, 
-                                                        renewed_url, 
-                                                        formatted_timestamp, 
-                                                        formatted_duration, 
-                                                        request_address)
-        else:
-            progress_ticks = task_in_progress.estimated_time / 10
-            current_progress = task_in_progress.progress
-            status[task_in_progress.task_identifier] = (current_progress, 
-                                                        renewed_url, 
-                                                        formatted_timestamp, 
-                                                        formatted_duration, 
-                                                        request_address)
-            task_in_progress.progress = task_in_progress.progress + progress_ticks
-        task_in_progress.save()
+    for task_in_progress in tasks:
+        if task_in_progress.thumbnail is not None and not cleanup_task(task_in_progress):
+            logging.info("Task in progress {}".format(task_in_progress.task_identifier))
+
+            renewed_url = highpoint.renew_url(task_in_progress.thumbnail.url)
+            formatted_timestamp = task_in_progress.timestamp.strftime("%I:%M %p, %m/%d/%Y")
+            formatted_duration = str(timedelta(seconds=task_in_progress.estimated_time))
+
+            if task_in_progress.is_done:
+                status[task_in_progress.task_identifier] = (100, 
+                                                            renewed_url, 
+                                                            formatted_timestamp, 
+                                                            formatted_duration, 
+                                                            request_address)
+            else:
+                progress_ticks = task_in_progress.estimated_time / 100
+                current_progress = task_in_progress.progress
+                status[task_in_progress.task_identifier] = (current_progress, 
+                                                            renewed_url, 
+                                                            formatted_timestamp, 
+                                                            formatted_duration, 
+                                                            request_address)
+                task_in_progress.progress = current_progress + progress_ticks
+            task_in_progress.save()
     
     user_profile.save()
     print("Status {}".format(status))
@@ -201,6 +203,64 @@ def fetch_results(request):
 
     print("Results {}".format(results.__dict__))
     return JsonResponse({'success': True, 'results': results.__dict__})
+
+@csrf_exempt
+def cleanup(request):
+    videos = Video.objects.all()
+    print("Running cleanup task with {} videos".format(len(list(videos))))
+
+    for video in videos:
+        print("Video timestamp {}".format(video.timestamp))
+        time_diff = datetime.now(timezone.utc) - video.timestamp
+        hours_elapsed = time_diff.total_seconds()/3600
+        print("Hours elapsed {}".format(hours_elapsed))
+
+        if hours_elapsed >= settings.HOURS_LIMIT:
+            video_path = video.filesystem_url.name
+            print("Deleting video {}".format(video_path))
+            video.delete()
+
+            highpoint.cleanup_videos(video_path)
+        else:
+            print("Video still < {}, keeping.".format(settings.HOURS_LIMIT))
+    
+    images = Image.objects.all()
+    print("Running cleanup task with {} images".format(len(list(images))))
+
+    for image in images:
+        print("Image timestamp {}".format(image.timestamp))
+        time_diff = datetime.now(timezone.utc) - image.timestamp
+        hours_elapsed = time_diff.total_seconds()/3600
+        print("Hours elapsed {}".format(hours_elapsed))
+
+        if hours_elapsed >= settings.HOURS_LIMIT:
+            print("Deleting image {}".format(image.url))
+            image_path = image.url
+            image.delete()
+
+            highpoint.cleanup_videos(image_path)
+        else:
+            print("Image still < {}, keeping.".format(settings.HOURS_LIMIT))
+
+def cleanup_task(task: Task) -> bool:
+    logging.info("Task timestamp {}".format(task.timestamp))
+    time_diff = datetime.now(timezone.utc) - task.timestamp
+    hours_elapsed = time_diff.total_seconds()/3600
+    logging.info("Hours elapsed {}".format(hours_elapsed))
+
+    if task.is_done and hours_elapsed >= settings.HOURS_LIMIT:
+        task_id = task.task_identifier
+        logging.info("Deleting task {}".format(task_id))
+        task.delete()
+
+        task_result: TaskResult = TaskResult.objects.get(task_identifier=task_id)
+        logging.info("Deleting task result {}".format(task_result.task_identifier))
+        task_result.delete()
+
+        return True
+    else:
+        logging.info("Task still < {}, keeping.".format(settings.HOURS_LIMIT))
+        return False
 
 @login_required
 def plans(request):

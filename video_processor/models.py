@@ -11,6 +11,7 @@ def user_upload_path(instance, filename):
 class Image(models.Model):
     user = models.ForeignKey(User,verbose_name='User', related_name="imageUser", on_delete=models.CASCADE)
     url = models.URLField(max_length=1000)
+    timestamp = models.DateTimeField(auto_now_add=True, null=True)
 
 class Video(models.Model):
     class VideoTypes(models.TextChoices):

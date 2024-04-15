@@ -26,6 +26,8 @@ urlpatterns = [
     path('subscribe/', views.subscribe, name='subscribe'),
     path('cancel/', views.cancel_subscription, name='cancel_subscription'),
 
+    path('cleanup/', csrf_exempt(views.cleanup), name="cleanup"),
+
     path('signup/', views.signup, name='signup'),
     path('login/', djviews.LoginView.as_view(template_name='login.html'), name='login'),
     path('logout/', djviews.LogoutView.as_view(), name='logout'),
