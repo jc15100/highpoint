@@ -42,7 +42,7 @@ SECRET_KEY = None
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Change this to "False" when you are ready for production
-DEBUG = True
+DEBUG = False
 
 if os.path.isfile(env_file):
     # Use a local secret file, if provided

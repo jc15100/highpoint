@@ -1,4 +1,4 @@
 cron:
 - description: "daily cleanup job"
   url: /cleanup
-  schedule: every 1 minutes
+  schedule: every 48 hours
