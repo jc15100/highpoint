@@ -76,17 +76,17 @@
                 {% if request.user.is_authenticated%}
                 <form class="navbar-item" id="home-form" method="post" action="{% url 'homepage' %}">
                     {% csrf_token %}
-                    <button class="button is-link is-light" type="submit">Dashboard</button>
+                    <button class="button is-link is-light is-size-4" type="submit">Dashboard</button>
                 </form>
                 {% else %}
                 <div class="navbar-item">
-                    <a href="{% url 'homepage' %}" class="is-responsive has-text-weight-light px-1">Overview</button>
+                    <a href="{% url 'homepage' %}" class="is-responsive has-text-weight-light px-1 is-size-4">Overview</button>
                 </div>
                 <div class="navbar-item">
-                    <a href="{% url 'homepage' %}#playersInfo" class="is-responsive has-text-weight-light px-1">Players</a>
+                    <a href="{% url 'homepage' %}#playersInfo" class="is-responsive has-text-weight-light px-1 is-size-4">Players</a>
                 </div>
                 <div class="navbar-item">
-                    <a href="{% url 'homepage' %}#enterprise" class="is-responsive has-text-weight-light px-1">API</a>
+                    <a href="{% url 'homepage' %}#enterprise" class="is-responsive has-text-weight-light px-1 is-size-4">API</a>
                 </div>
                 {% endif %}
             </div>
@@ -95,32 +95,32 @@
                 <div class="navbar-item">
                     <form id="upload-form" method="post" action="{% url 'uploader' %}">
                         {% csrf_token %}
-                        <button class="button is-success is-light is-responsive" type="submit">Upload</button>
+                        <button class="button is-success is-light is-responsive is-size-4" type="submit">Upload</button>
                     </form>
                 </div>
                 <div class="navbar-item">
                     <form id="subscription-form" method="post" action="{% url 'plans' %}">
                         {% csrf_token %}
-                        <button class="button is-link is-light is-responsive" type="submit">Subscription</button>
+                        <button class="button is-link is-light is-responsive is-size-4" type="submit">Subscription</button>
                     </form>
                 </div>
                 <div class="navbar-item">
                     <form id="logout-form" method="post" action="{% url 'logout' %}">
                         {% csrf_token %}
-                        <button class="button is-danger is-light is-responsive" type="submit">Log out {{request.user}}</button>
+                        <button class="button is-danger is-light is-responsive is-size-4" type="submit">Log out {{request.user}}</button>
                     </form>
                 </div>
                 {% else %}
                 <div class="navbar-item">
                     <form id="signup-form" method="post" action="{% url 'signup' %}">
                         {% csrf_token %}
-                        <button class="button is-link is-light is-responsive" type="submit">Signup</button>
+                        <button class="button is-link is-light is-responsive is-size-4" type="submit">Signup</button>
                     </form>
                 </div>
                 <div class="navbar-item">
                     <form id="login-form" method="post" action="{% url 'login' %}">
                         {% csrf_token %}
-                        <button class="button is-link is-light is-responsive" type="submit">Login</button>
+                        <button class="button is-link is-light is-responsive is-size-4" type="submit">Login</button>
                     </form>
                 </div>
                 {% endif %}
