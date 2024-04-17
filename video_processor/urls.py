@@ -31,4 +31,6 @@ urlpatterns = [
     path('signup/', views.signup, name='signup'),
     path('login/', djviews.LoginView.as_view(template_name='login.html'), name='login'),
     path('logout/', djviews.LogoutView.as_view(), name='logout'),
+
+    path(r'^_ah/warmup$', views.warmup, name='warmup'),
 ] + static(settings.MEDIA_URL, document_root= settings.MEDIA_ROOT)

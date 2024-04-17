@@ -20,6 +20,12 @@ runtime: python311
 env: standard
 instance_class: F4_1G
 
+automatic_scaling:
+  min_instances: 1
+
+inbound_services:
+- warmup
+
 env_variables:
   # This setting is used in settings.py to configure your ALLOWED_HOSTS
   APPENGINE_URL: pivotal-valve-407719.ue.r.appspot.com

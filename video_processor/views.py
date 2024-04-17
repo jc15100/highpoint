@@ -360,6 +360,10 @@ def signup(request):
     
     return render(request, 'signup.html', {'form': form})
 
+def warmup(request):
+    logging.info("Warmup request received")
+    return HttpResponse('Warmup Msg', content_type='text/plain')
+
 # MARK: Private methods
 
 def _get_user_profile(user):
