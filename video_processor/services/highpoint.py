@@ -51,7 +51,7 @@ class HighpointService:
             # Update user profile
             user_profile = UserProfile.objects.get(user=user_auth)
             user_profile.number_of_uploads += 1
-            user_profile.level = max(round(((1 / (len(user_profile.smashes.all()) + 1)) * 0.2) + user_profile.level, 2), 5.0)
+            user_profile.level = min(round(((1 / (len(user_profile.smashes.all()) + 1)) * 0.2) + user_profile.level, 2), 5.0)
             user_profile.players += 4
             
             # Update task in progress & mark it done
