@@ -34,6 +34,7 @@ class Task(models.Model):
     estimated_time = models.FloatField(default=0.0)
     user = models.ForeignKey(User,verbose_name='User', related_name="taskUser", on_delete=models.CASCADE)
     thumbnail = models.OneToOneField(Image, related_name="videoThumbnail", on_delete=models.CASCADE, null=True)
+    pipeline_stage = models.CharField(max_length=100, null=True)
 
 class TaskResult(models.Model):
     task_identifier = models.CharField(max_length=100)

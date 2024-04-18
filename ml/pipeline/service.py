@@ -6,6 +6,7 @@ from .segmentation.segmenter import MatchSegmenter
 from .gpt.openai_vision import OpenAIVisionProcessor
 from .result import HighpointResult
 from .core.storage_helper import StorageHelper
+from video_processor.models import Task
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -42,12 +43,19 @@ class RacquetSportsMLService:
 
         return check
 
-    def run_pipeline(self, video_url, user, timestamp) -> HighpointResult:
+    def run_pipeline(self, video_url, user, timestamp, task: Task) -> HighpointResult:
         print("Video processing started.")
         video = Video(video_url)
 
         # (1) Use GPT model to detect smashes & any other critical metadata
+        task.pipeline_stage = "Detecting smashes…"
+        task.progress = 25
+        task.save()
         smashes = self.detect_smashes(video, self.openAIProcessor)
+
+        task.progress = 30
+        task.pipeline_stage = "Extracting smashes…"
+        task.save()
         smashes_videos, smashes_videos_urls = self.extract_smashes(user=user, 
                                               video=video, 
                                               smashes=smashes, 
@@ -57,12 +65,18 @@ class RacquetSportsMLService:
 
         video.reset()
 
-        # (2) Segment the game into points, return longest point as highlight        
+        # (2) Segment the game into points, return longest point as highlight
+        task.progress = 45
+        task.pipeline_stage = "Detecting highlight…"
+        task.save()
         group_highlight, player_speeds, player_frames, player_frames_urls = self.detect_group_highlight(user=user, 
                                                                                     video=video,
                                                                                     segmenter=self.segmenter,
                                                                                     timestamp=timestamp)
         
+        task.progress = 75
+        task.pipeline_stage = "Extracting highlight…"
+        task.save()
         group_highlight_video, group_highlight_url = self.extract_group_highlight(user=user, 
                                                                   video=video, 
                                                                   start_frame=group_highlight[0], 
@@ -72,6 +86,10 @@ class RacquetSportsMLService:
         video.release()
 
         print("Video processing finished.")
+
+        task.progress = 95
+        task.pipeline_stage = "Polishing video…"
+        task.save()
 
         return HighpointResult(
             smashes=smashes_videos,

@@ -29,21 +29,25 @@ class HighpointService:
         video_url = self.file_signed_url(user, filename)
         return self.mlService.video_data(user, video_url, timestamp)
 
-    def process(self, user, fileName, task_id, timestamp):
+    def process(self, user, fileName, task: Task, timestamp):
         video_url = self.file_signed_url(user, fileName)
 
         # check it's a supported sport video
+        task.pipeline_stage = "Checking for supported sports…"
+        task.progress = 15
+        task.save()
+        
         supported = self.mlService.check_supported_sport(video_url)
         logging.info("Supported sport? " + str(supported))
 
         if not supported:
             result = {'supported': False}
         else:
-            result = self.mlService.run_pipeline(video_url, user, timestamp)
+            result = self.mlService.run_pipeline(video_url, user, timestamp, task)
 
-            self.update_db(user, result, task_id)
+            self.update_db(user, result, task)
 
-    def update_db(self, user, result: HighpointResult, task_id):
+    def update_db(self, user, result: HighpointResult, task: Task):
         if result.supported == True:
             User = get_user_model()
             user_auth = User.objects.get(username=user) 
@@ -55,18 +59,16 @@ class HighpointService:
             user_profile.players += 4
             
             # Update task in progress & mark it done
-            task_in_progress: Task = user_profile.tasks_in_progress.get(task_identifier=task_id)
-            task_in_progress.progress = 100
-            task_in_progress.is_done = True
-            task_in_progress.save()
-            logging.info("Updated task in progress with id {}".format(task_id))
+            task.pipeline_stage = "Done"
+            task.progress = 100
+            task.is_done = True
+            task.save()
+            logging.info("Updated task in progress with id {}".format(task.task_identifier))
             
             # Create a TaskResult and save to DB
-            task_result = self.highpoint_mapper(highpoint=result, user=user_auth, task_id=task_id, profile=user_profile)
+            task_result = self.highpoint_mapper(highpoint=result, user=user_auth, task_id=task.task_identifier, profile=user_profile)
             task_result.save()
             user_profile.save()
-
-            logging.info("Created TaskResult with id {}".format(task_id))
         else:
             logging.info("Computed result is not supported!")
 
@@ -106,6 +108,7 @@ class HighpointService:
     
     def highpoint_mapper(self, highpoint: HighpointResult, user: User, task_id, profile: UserProfile) -> TaskResult:
         task_result = TaskResult.objects.create(task_identifier=task_id, timestamp=highpoint.timestamp, user=user)
+        logging.info("Created TaskResult with id {}".format(task_id))
 
         highlight = Video.objects.create(type=Video.VideoTypes.HIGHLIGHT, user=user, filesystem_url=highpoint.group_highlight, timestamp_string=highpoint.timestamp)
         task_result.group_highlight = highlight

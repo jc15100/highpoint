@@ -151,8 +151,9 @@ def process_task(request):
     task_in_progress = Task.objects.create(task_identifier=current_task_id, is_done=False, progress=0, estimated_time=length, user=user_profile.user, thumbnail=thumbnail)   
     user_profile.tasks_in_progress.add(task_in_progress)
     user_profile.save()
+    task_in_progress.save()
     
-    highpoint.process(user, fileName, current_task_id, timestamp)
+    highpoint.process(user, fileName, task_in_progress, timestamp)
     return JsonResponse({'success': True})
 
 # Eventually replace with WebSockets
@@ -160,7 +161,7 @@ def task_status(request):
     user_profile = _get_user_profile(request.user)
     request_address = _get_user_address(request)
     
-    tasks: [Task] = user_profile.tasks_in_progress.all()
+    tasks = user_profile.tasks_in_progress.all()
     status = {}
 
     for task_in_progress in tasks:
@@ -168,25 +169,20 @@ def task_status(request):
             logging.info("Task in progress {}".format(task_in_progress.task_identifier))
 
             renewed_url = highpoint.renew_url(task_in_progress.thumbnail.url)
+            
             formatted_timestamp = task_in_progress.timestamp.strftime("%I:%M %p, %m/%d/%Y")
             formatted_duration = str(timedelta(seconds=task_in_progress.estimated_time))
 
-            if task_in_progress.is_done:
-                status[task_in_progress.task_identifier] = (100, 
-                                                            renewed_url, 
-                                                            formatted_timestamp, 
-                                                            formatted_duration, 
-                                                            request_address)
-            else:
-                progress_ticks = task_in_progress.estimated_time / 100
-                current_progress = task_in_progress.progress
-                status[task_in_progress.task_identifier] = (current_progress, 
-                                                            renewed_url, 
-                                                            formatted_timestamp, 
-                                                            formatted_duration, 
-                                                            request_address)
-                task_in_progress.progress = current_progress + progress_ticks
-            task_in_progress.save()
+            status[task_in_progress.task_identifier] = (
+                task_in_progress.progress, 
+                renewed_url, 
+                formatted_timestamp, 
+                formatted_duration,
+                request_address,
+                task_in_progress.pipeline_stage
+            )
+        else:
+            logging.warn("Task is missing thumbnail image or has been cleaned up.")
     
     user_profile.save()
     print("Status {}".format(status))
