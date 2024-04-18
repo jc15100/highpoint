@@ -83,6 +83,7 @@
                                     <h6 class="is-color-highpoint-pink">[[ progressData[2] ]]</h6>
                                     <h6 class="is-color-highpoint-pink">[[ progressData[3] ]]</h6>
                                     <h6 class="is-color-highpoint-pink">[[ progressData[4] ]]</h6>
+                                    <h6 class="is-color-highpoint-pink">Status: [[ progressData[5] ]]</h6>
                                 </div>
                                 <div class="column has-text-centered pt-1">
                                     <button class="button is-link" id="resultsButton" :disabled='progressData[0] != 100' @click="fetchResults(task)">See Results</button>
@@ -90,7 +91,6 @@
                             </div>
                             <div class="columns is-vcentered pt-0">
                                 <div class="column is-full is-vcentered pt-1">
-                                    <h6 class="is-color-highpoint-pink">Status: [[ progressData[5] ]]</h6>
                                     <progress class="progress is-small mt-5 pb-6 is-link pt-0" id="processingProgress" :value.prop="progressData[0]" max="100"> [[ progress[0] ]] </progress>
                                     <div></div>
                                 </div>
