@@ -20,6 +20,9 @@ class Video:
 
     def get_frame_count(self):
         return int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    
+    def get_duration(self):
+        return int(self.get_frame_count()/self.get_frame_rate())
 
     def get_frame_width(self):
         return int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
