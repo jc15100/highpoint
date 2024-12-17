@@ -42,7 +42,7 @@ SECRET_KEY = None
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Change this to "False" when you are ready for production
-DEBUG = False
+DEBUG = True
 
 if os.path.isfile(env_file):
     # Use a local secret file, if provided
@@ -95,6 +95,7 @@ DJSTRIPE_FOREIGN_KEY_TO_FIELD = "djstripe_id"
 INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
+    'django_user_agents',
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -114,6 +115,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'django_user_agents.middleware.UserAgentMiddleware',
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True

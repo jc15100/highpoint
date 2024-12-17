@@ -1,0 +1,564 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<head>
+    {% load static %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</head>
+<body>
+    <section class="is-mobile" id="app">
+        <div class="container">
+            
+            <div class="left">
+                <div id="startButton" class="button" @click="startCamera">Start Recording</div>
+                <h2>Preview</h2>
+                <video id="preview" width="320" height="240" autoplay muted></video>
+            </div>
+            
+            <div class="right">
+                <div id="stopButton" class="button" @click="stopCamera">Stop Recording</div>
+            </div>
+            
+            <!-- Processing modal -->
+            <div class="modal" id="processingModal" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="uploadingTitle">Upload a video.</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        
+                        <div class="modal-body">
+                            <progress id="videoUpload" class="progress is-small mt-5 is-link" :value.prop="progress" max="100"> [[ progress ]] </progress>
+                        </div>
+                        
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary m-progress" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>  
+            </div>
+            <!--End of processing modal-->
+            
+            <!-- Upload button -->
+            <div class="block">
+                <div class="block file is-link is-flex is-centered">
+                    <label class="file-label">
+                        <input class="file-input" type="file" ref="file" @change="selectFile" data-toggle="modal" data-target="#processingModal" multiple>
+                        
+                        <span class="file-cta">
+                            <span class="file-icon">
+                                <i class="fas fa-upload"></i>
+                            </span>
+                            <span class="file-label">
+                                Upload your video
+                            </span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- End of Upload button -->
+            
+            <!-- Progress area -->
+            
+            <div v-show="Object.keys(tasks_status).length">
+                <div class="box" v-for="(progressData, task) in tasks_status">
+                    <div class="columns">
+                        <div class="column">
+                            <div class="columns is-vcentered pt-3 pb-0">
+                                <div class="column">
+                                    <figure class="image is-preview-size">
+                                        <img class="outlined-div" :src="progressData[1]">
+                                    </figure>
+                                </div>
+                                <div class="column is-7">
+                                    <h6 class="is-color-highpoint-pink">[[ progressData[2] ]]</h6>
+                                    <h6 class="is-color-highpoint-pink">[[ progressData[3] ]]</h6>
+                                    <h6 class="is-color-highpoint-pink">[[ progressData[4] ]]</h6>
+                                    <h6 class="is-color-highpoint-pink">Status: [[ progressData[5] ]]</h6>
+                                </div>
+                                <div class="column has-text-centered pt-1">
+                                    <button class="button is-link" id="resultsButton" :disabled='progressData[0] != 100' @click="fetchResults(task)">See Results</button>
+                                </div>
+                            </div>
+                            <div class="columns is-vcentered pt-0">
+                                <div class="column is-full is-vcentered pt-1">
+                                    <progress class="progress is-small mt-5 pb-6 is-link pt-0" id="processingProgress" :value.prop="progressData[0]" max="100"> [[ progress[0] ]] </progress>
+                                    <div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- End of Progress area -->
+            
+            <!-- Special message area -->
+            
+            <div class="modal" id="unsupportedInput" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="uploadingTitle">Warning</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div>Apologies, but the video you've provided features a sport that is not supported.</div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal" id="videoError" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="uploadingTitle">Warning</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div>Apologies, but the video you've provided has an error.</div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal" id="trialModal" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="uploadingTitle">Trial over.</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div>Please subscribe to continue using our service.</div>
+                        </div>
+                        <div class="modal-footer">
+                            <form action="{% url 'plans' %}" method="get">
+                                <button class="button is-link" type="submit">Subscribe</button>
+                            </form>
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- End of Special message area -->
+            
+            <!-- Results Area -->
+            
+            <div class="modal" id="resultModal" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-content">
+                    
+                    {% comment %} <div class="box" v-show="player_speeds">
+                        <div class="columns is-centered">
+                            <div class="column is-half">
+                                <canvas id="playerSpeedsChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="columns is-centered is-mobile">
+                            <div class="column is-narrow has-text-centered" width="128" v-for="(image, index) in player_frames">
+                                <img class="image is-96x96 outlined-div" style="border-radius:50%" :src="image" :alt="'Player ' + (index + 1)"/>
+                                <p class="subtitle is-6">Player [[ index + 1 ]]</p>
+                            </div>
+                        </div>
+                    </div> {% endcomment %}
+                    
+                    {% comment %} <div class="box" v-show="smashes.length">
+                        <h3 class="subtitle is-6 is-color-highpoint-pink">Smashes</h3>
+                        <div class="block" v-for="smash in smashes">
+                            <video id="result-{{smash}}" class="video-js outlined-div" controls preload="auto" width="640" height="264">
+                                <source :src="smash" type="video/mp4" />
+                                <p class="vjs-no-js">
+                                    To view this video please enable JavaScript, and consider upgrading to a
+                                    web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                                </p>
+                            </video>
+                        </div>
+                    </div> {% endcomment %}
+                    
+                    <div class="box" v-show="smashes.length">
+                        <h3 class="subtitle is-6"><span class="is-color-highpoint-pink">Smashes</span></h3>
+                        <div class="box columns is-multiline has-text-centered outlined-div">
+                            <div v-for="smash in smashes" class="column is-3">
+                                <video id="result-{{smash}}" class="video-js outlined-div" controls preload="auto" width="320" height="132">
+                                    <source :src="smash" type="video/mp4" />
+                                    <p class="vjs-no-js">
+                                        To view this video please enable JavaScript, and consider upgrading to a
+                                        web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                                    </p>
+                                </video>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="box" v-show="highlights.length">
+                        <h3 class="subtitle is-6"><span class="is-color-highpoint-pink">Highlight</span></h3>
+                        <div class="box columns is-multiline has-text-centered outlined-div">
+                            <div v-for="highlight in highlights" class="column is-3">
+                                <video id="result-{{highlight}}" class="video-js outlined-div" controls preload="auto" width="320" height="132">
+                                    <source :src="highlight" type="video/mp4" />
+                                    <p class="vjs-no-js">
+                                        To view this video please enable JavaScript, and consider upgrading to a
+                                        web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                                    </p>
+                                </video>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+                <button class="modal-close is-large" aria-label="close" data-dismiss="modal"></button>
+                <!-- End of Results Area -->
+            </div>
+        </div>
+    </section>
+    
+    <script>
+        const { createApp } = Vue
+        let recordingTimeMS = 5000
+
+        createApp({
+            mounted() {
+                // check for status at 2 mins (120,000 ms)
+                this.pollInterval = setInterval(this.pollTasksInProgress, 120000)
+                this.pollTasksInProgress()
+            },
+            beforeDestroy () {
+                clearInterval(this.pollInterval)
+            },
+            data() {
+                return {
+                    videos: [],
+                    smashes: [],
+                    highlights: [],
+                    video_uploaded: false,
+                    progress: 0,
+                    trial_over: false,
+                    player_frames: [],
+                    tasks_status: {},
+                    pollInterval: null,
+                    player_speeds: {}
+                }
+            },
+            delimiters: ['[[', ']]'],
+            methods: {
+                startCamera() {
+                    navigator.mediaDevices
+                    .getUserMedia({
+                        video: true,
+                        audio: true,
+                    })
+                    .then((stream) => {
+                        preview.srcObject = stream;
+                        preview.captureStream =
+                        preview.captureStream || preview.mozCaptureStream;
+                        return new Promise((resolve) => (preview.onplaying = resolve));
+                    })
+                    .then(() => this.startRecording(preview.captureStream(), recordingTimeMS))
+                    .then((recordedChunks) => {
+                        let recordedBlob = new Blob(recordedChunks, { type: "video/webm" });
+                        
+                        let fileName = "recorded-video-" + new Date().getTime() + ".webm"
+                        let file = new File([recordedBlob], fileName, { type: "video/webm" })
+                        
+                        this.upload(file, "video/webm")
+                        
+                        console.log(
+                        `Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media.`,
+                        );
+                    })
+                    .catch((error) => {
+                        if (error.name === "NotFoundError") {
+                            console.log("Camera or microphone not found. Can't record.");
+                        } else {
+                            console.log(error);
+                        }
+                    });
+                },
+                stopCamera() {
+                    let preview = document.getElementById("preview");
+                    this.stop(preview.srcObject);
+                },
+                startRecording(stream, lengthInMS) {
+                    let recorder = new MediaRecorder(stream);
+                    let data = [];
+                    
+                    recorder.ondataavailable = (event) => data.push(event.data);
+                    recorder.start();
+                    console.log(`${recorder.state} for ${lengthInMS / 1000} seconds…`);
+                    
+                    let stopped = new Promise((resolve, reject) => {
+                        recorder.onstop = resolve;
+                        recorder.onerror = (event) => reject(event.name);
+                    });
+                    
+                    let recorded = this.wait(lengthInMS).then(() => {
+                        if (recorder.state === "recording") {
+                            recorder.stop();
+                        }
+                    });
+                    
+                    return Promise.all([stopped, recorded]).then(() => data);
+                },
+                wait(delayInMS) {
+                    return new Promise((resolve) => setTimeout(resolve, delayInMS));
+                },
+                stop(stream) {
+                    stream.getTracks().forEach((track) => track.stop());
+                },
+                selectFile() {
+                    Array.from(this.$refs.file.files).forEach(file => {
+                        console.log(file)
+                        this.upload(file, "video/mp4")
+                        
+                        this.videos.push({
+                            'name': file.name,
+                            'status': 'is uploading'
+                        })
+                    })
+                },
+                upload(file, type) {
+                    this.getUploadUrl(file)
+                    .then(response => {
+                        if (response.data.trial_done) {
+                            this.trial_over = true
+                            console.log("Free trial done, please register for a subscription.")
+                            $('#trialModal').modal('show')
+                            
+                            this.closeUploader()
+                            return null
+                        } else { 
+                            signed_url = response.data.url
+                            console.log("(signed) URL for upload: " + signed_url)
+                            return signed_url
+                        }
+                    })
+                    .then(signed_url => {
+                        return this.performUpload(signed_url, file, type, event => {
+                            this.video_uploaded = true
+                            this.progress = Math.round((100 * event.loaded)/event.total)
+                            console.log("Updating progress " + this.progress + " event " + JSON.stringify(event))
+                        })
+                    })
+                    .then(uploaded_url => {
+                        return this.dispatch(file)
+                    })
+                    .then(results => {
+                        this.handleTaskSubmission(results)
+                    })
+                    .catch(error => {
+                        if (this.trial_over == false) {
+                            console.log("Error " + error)
+                            this.progress = 0
+                            this.videos.forEach(video => {
+                                if (video.name === file.name) {
+                                    video['status'] = 'failed'
+                                }
+                            })
+                            $('#videoError').modal('show')
+                            this.closeUploader()
+                        }
+                    })
+                },
+                getUploadUrl(file) {
+                    console.log("File for url: " + file.name + " with type: " + file.type)
+                    const body = {
+                        fileName: file.name,
+                        fileType: file.type
+                    };
+                    
+                    return axios.post('/upload_url/', body, {
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token }}"
+                        }
+                    })
+                },
+                performUpload(url, file, type, onUploadProgress) {
+                    return axios.put(url, file, {
+                        headers: {
+                            "Content-Type": type,
+                        },
+                        onUploadProgress
+                    })
+                },
+                dispatch(file) {
+                    const body = {
+                        fileName: file.name
+                    };
+                    
+                    return axios.post("/dispatch/", body, {
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token }}"
+                        }
+                    })
+                },
+                closeUploader() {
+                    document.getElementById('close').click()
+                },
+                speedHelper(speeds) { 
+                    datasets = []
+                    if (typeof speeds !== 'undefined') {
+                        Object.entries(speeds).forEach(([playerId, playerSpeeds]) => {
+                            datasets.push({
+                                label: "Player " + playerId,
+                                data: playerSpeeds
+                            })
+                        })
+                        
+                        const [[firstPlayerId, firstPlayerSpeeds]] = Object.entries(speeds);
+                    }
+                    
+                    labels = []//firstPlayerSpeeds.map((element, index) => index)
+                    return [datasets, labels]
+                },
+                resetView() {
+                    this.highlights = []
+                    this.player_frames = []
+                    this.smashes = []
+                    this.player_speeds = {}
+                    
+                },
+                handleTaskSubmission(response) {
+                    const data = response.data
+                    this.closeUploader()
+                    this.progress = 0
+                    
+                    if (data['success']) {
+                        const data = response.data
+                        const task = data.task
+                        console.log(task)
+                    } else {
+                        console.log("Failed with response " + JSON.stringify(data))
+                        $('#videoError').modal('show')
+                        this.closeUploader()
+                    }
+                },
+                pollTasksInProgress() {
+                    console.log("Polling for task status...")
+                    axios.get('/task_status/')
+                    .then(response => {
+                        const data = response.data
+                        const tasks = data.tasks
+                        
+                        for (const [task, progress] of Object.entries(tasks)) {
+                            this.tasks_status[task] = progress
+                        }
+                        console.log("Tasks Status updated " + JSON.stringify(this.tasks_status))
+                    })
+                },
+                fetchResults(taskId) {
+                    const body = {
+                        taskId: taskId
+                    }
+                    console.log("Fetching results for " + taskId)
+                    return axios.post('/fetch_results/', body, {
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token }}"
+                        }
+                    })
+                    .then(results => {
+                        this.handleResults(results)
+                    })
+                },
+                handleResults(response) {
+                    const data = response.data
+                    
+                    if (data['success']) {                    
+                        console.log(data.results)
+                        results = data.results
+                        this.resetView()
+                        
+                        if (results.supported) {
+                            // add group_highlights
+                            console.log("Highlight " + results.group_highlight)
+                            this.highlights.push(results.group_highlight_url)
+                            
+                            // add smashes
+                            this.smashes = this.smashes.concat(results.smashes_urls)
+                            console.log("Smashes " + this.smashes)
+                            
+                            this.player_frames = results.player_frames_urls
+                            console.log("Frames " + this.player_frames)
+                            
+                            /* display player speeds
+                            player_speeds = results.player_speeds
+                            console.log("Speed count: " + Object.keys(player_speeds).length)
+                            const [datasets, labels] = this.speedHelper(player_speeds)
+                            const chartContext = document.getElementById("playerSpeedsChart").getContext("2d")
+                            
+                            this.player_speeds = player_speeds
+                            
+                            // populate chart
+                            if (this.existingChart) {
+                                this.existingChart.destroy()
+                            }
+                            
+                            const chart = new Chart(chartContext, {
+                                type: "line",
+                                data: {
+                                    labels: labels,
+                                    datasets: datasets,
+                                },
+                                options: {
+                                    maintainAspectRatio: false,
+                                    scales: {
+                                        y: {
+                                            display: false, // Set display to false to hide Y-axis values
+                                            beginAtZero: true
+                                        }
+                                    },
+                                    plugins: {
+                                        title: {
+                                            display: true,
+                                            text: 'Player Speeds',
+                                            font: {
+                                                size: 16,
+                                                weight: 'normal'
+                                            }
+                                        }
+                                    }
+                                }
+                            })
+                            chart.update()
+                            this.existingChart = chart*/
+                            
+                            $('#resultModal').modal('show')
+                        } else {
+                            $('#unsupportedInput').modal('show')
+                            this.closeUploader()
+                        }
+                    } else {
+                        console.log("Failed with response " + JSON.stringify(data))
+                        $('#videoError').modal('show')
+                        this.closeUploader()
+                    }
+                }
+            },
+        })
+        .mount('#app')
+    </script>
+</body>
+{% endblock %}

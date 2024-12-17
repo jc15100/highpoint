@@ -132,6 +132,8 @@ class HighpointService:
         fileName = body['fileName']
         fileType = body['fileType']
 
+        print("file with name {} type request {}".format(fileName, fileType))
+
         storage_bucket = self.storage_helper.get_storage_bucket_path(request.user, fileName)
 
         test_url = self.storage_helper.get_signed_url_for_upload(storage_bucket, fileType, "PUT")

@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 
 from scipy.signal import argrelmin
 from PIL import Image
@@ -19,7 +20,7 @@ class MatchSegmenter:
         self.flow = OpticalFlow()
         self.plotting = plotting
         self.yolo = YOLOStep()
-
+        
         # plotting variables
         self.ax = []
         self.hsv = []
@@ -76,7 +77,8 @@ class MatchSegmenter:
         
         boxes_per_player = {}
         player_frames = []
-
+        
+        start_yolo = time.time()
         while True:
             current_frame = video.read_frame()
 
@@ -90,10 +92,6 @@ class MatchSegmenter:
                     # Display the annotated frame
                     cv2.imshow("YOLOv8 Inference", annotated_frame)
 
-                    # Break the loop if 'q' is pressed
-                    if cv2.waitKey(1) & 0xFF == ord("q"):
-                        break
-                
                 for result in results:
                     for box in result.boxes:
                         if box.id is not None and result.names is not None:
@@ -127,8 +125,10 @@ class MatchSegmenter:
             else:
                 print("Done with frames, exiting YOLO loop")
                 break
-        
-        print("Finished detection_flow with %d boxe(s) out of %d frame(s)" % (len(boxes_per_player),video.get_frame_count()))
+        end_yolo = time.time()
+
+        print("Original video duration %d(s)" % (video.get_duration()))
+        print("Finished detection_flow with %d boxe(s) out of %d frame(s) in %d(s)" % (len(boxes_per_player), video.get_frame_count(), (end_yolo-start_yolo)))
         print("Extracted %d player frames (4 expected) " % len(player_frames))
 
         if len(boxes_per_player) > 0:
@@ -145,6 +145,7 @@ class MatchSegmenter:
                 if len(speeds) > 0:
                     # convolve the 1D array of speeds
                     speeds = np.convolve(speeds, np.ones(self.convolve_window)/self.convolve_window, mode='valid')
+                    speeds_per_player[player] = speeds
 
             if self.plotting == True:
                 # plot one of the speeds

@@ -29,9 +29,11 @@ youtube = YoutubeHelper()
 
 def upload_page(request):
     uploadForm = UploadForm(user_id=request.user.id)
+
+    print("Request is from mobile {}".format(request.user_agent.is_mobile))
     
     downloadLinkForm = DownloadLinkForm(user_id=request.user.id)
-    return render(request, 'upload-page.html', {'form_upload': uploadForm, 'form_link': downloadLinkForm})
+    return render(request, 'record.html', {'form_upload': uploadForm, 'form_link': downloadLinkForm})
 
 def homepage(request):
     return render(request, 'homepage.html')
